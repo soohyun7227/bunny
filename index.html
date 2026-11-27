@@ -1242,6 +1242,11 @@ document.addEventListener('pointerdown',()=>{if(bellOn)unlock();},{once:true});
 bellLabel();
 
 $('walkBtn').addEventListener('click',()=>{setView(VIEW==='walk'?'work':'walk',true);});
+/* crisp pixels: size the room to a whole number of screen pixels per art pixel */
+function snapStage(){const st=document.querySelector('.stage');if(!st)return;st.style.width='';
+  const avail=st.getBoundingClientRect().width,dpr=window.devicePixelRatio||1,k=Math.floor(avail*dpr/W);
+  if(k>=1&&k*W/dpr>=avail*.94)st.style.width=(k*W/dpr)+'px';} // only when it barely shrinks the room
+snapStage();addEventListener('resize',snapStage);
 /* night lighting */
 function glow(x,y,r,rgb,a){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
 function lampGlow(t){
