@@ -211,7 +211,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   </div>
 
   <div class="row">
-    <p class="hint">방명록·우체통·책장 액자를 눌러 보세요. 왼쪽 아래 카메라로 인증샷도 찰칵!<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
+    <p class="hint">방명록·우체통·책장 액자를 눌러 보세요. 왼쪽 아래 카메라로 인증샷도 찰칵!<br>bunny를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
   </div>
 </div>
 
@@ -248,7 +248,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     </form>
     <div class="wl-form" id="wlRole" hidden>
       <p class="wl-q">이 기기는 누구 거예요? 처음 한 번만 골라 주세요</p>
-      <div class="role-acts"><button class="ib go" type="button" data-wrole="me">나</button><button class="ib" type="button" data-wrole="oppa">오빠</button></div>
+      <div class="role-acts"><button class="ib go" type="button" data-wrole="me">bunny</button><button class="ib" type="button" data-wrole="oppa">tori</button></div>
     </div>
     <form class="add wl-form" id="ownerForm" hidden>
       <label for="o-key">방 주인 열쇠<input id="o-key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="열쇠를 붙여 넣으세요"></label>
@@ -308,7 +308,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       <form class="add" id="evForm">
         <label for="ev-title">무슨 일정이에요?<input id="ev-title" required maxlength="60" placeholder="예: 제로 콜라 미용, 저녁 약속"></label>
         <div class="two"><label for="ev-date">날짜<input id="ev-date" type="date" required></label><label for="ev-time">시간 (비우면 하루 종일)<input id="ev-time" type="time"></label></div>
-        <label for="ev-who">누구 일정<select id="ev-who"><option value="both">같이</option><option value="me">나</option><option value="oppa">오빠</option></select></label>
+        <label for="ev-who">누구 일정<select id="ev-who"><option value="both">같이</option><option value="me">bunny</option><option value="oppa">tori</option></select></label>
         <button class="ib go" type="submit">일정판에 붙이기</button>
       </form>
       <div class="gb" id="evList"></div>
@@ -334,7 +334,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="role-title">
     <div class="sh-head"><h2 id="role-title">이 기기는 누구 거예요?</h2></div>
     <p class="empty">둘만의 일정·쪽지·한마디에 이름이 붙어요. 나중에 바꿀 수 있어요.</p>
-    <div class="role-acts"><button class="ib go" type="button" data-role="me">나</button><button class="ib" type="button" data-role="oppa">오빠</button></div>
+    <div class="role-acts"><button class="ib go" type="button" data-role="me">bunny</button><button class="ib" type="button" data-role="oppa">tori</button></div>
   </div>
 </div>
 <div class="scrim" id="mailScrim" hidden>
@@ -495,8 +495,8 @@ function dog(c,ox,oy,L,pose,frame,flip,k=1){
 
 /* ---------- cast ---------- */
 const ACTORS=[
-  {id:'me',name:'나',kind:'person',look:null},
-  {id:'oppa',name:'오빠',kind:'person',look:null},
+  {id:'me',name:'bunny',kind:'person',look:null},
+  {id:'oppa',name:'tori',kind:'person',look:null},
   {id:'latte',name:'제로',kind:'dog',look:{o:'#5a3a26',h:'#d9b088',l:'#ecd0ac',d:'#b98f62',k:'#8a5e3e',eye:'#1a1210',shine:'#ffffff'}},
   {id:'choco',name:'콜라',kind:'dog',look:{o:'#0b0a0c',h:'#4a474f',l:'#646169',d:'#33313a',k:'#1c1b20',eye:'#0b0a0c',shine:'#d8d8d8'}},
 ];
@@ -1440,9 +1440,9 @@ function wlDraw(t){const keep=ctx;ctx=wlCtx;try{ctx.setTransform(S,0,0,S,0,0);ct
 }finally{ctx=keep;}}
 (function wlLoop(now){if(WL.hidden)return;wlDraw(now/1000);requestAnimationFrame(wlLoop);})(performance.now());
 function wlOwner(){
-  const r=ROLE;$('wlBubble').textContent=r==='oppa'?'오빠 왔다! 멍멍!':'다녀왔어? 멍멍!';
+  const r=ROLE;$('wlBubble').textContent=r==='oppa'?'tori 왔다! 멍멍!':'bunny 왔다! 멍멍!';
   if(!r){$('wlRole').hidden=false;$('wlSub').textContent='';return;}
-  $('wlSub').textContent=r==='oppa'?'오빠, 어서 와요':'어서 와요';setTimeout(wlEnter,1500);
+  $('wlSub').textContent=r==='oppa'?'tori, 어서 와요':'bunny, 어서 와요';setTimeout(wlEnter,1500);
 }
 document.querySelectorAll('#wlRole [data-wrole]').forEach(b=>b.onclick=()=>{setRole(b.dataset.wrole);$('wlRole').hidden=true;wlOwner();});
 WL.addEventListener('click',e=>{if(IS_OWNER===true&&ROLE&&e.target===WL)wlEnter();});
@@ -1452,7 +1452,7 @@ WL.addEventListener('click',e=>{if(IS_OWNER===true&&ROLE&&e.target===WL)wlEnter(
   if(owner)wlOwner();
   if(!roomNS){if(!owner){$('wlSub').textContent='구경하러 들어가요';setTimeout(wlEnter,1200);}return;}
   roomNS.onPeers(ch=>{onPeerList(ch.peers);onPeerExtras(ch.peers);},()=>{});
-  if(owner){joined=true;emotesEl.hidden=false;chatEl.hidden=false;chatLine('','친구가 들어오면 여기서 같이 이야기할 수 있어요',true);roomNS.presence({host:true}).catch(()=>{});}
+  if(owner){joined=true;emotesEl.hidden=false;chatEl.hidden=false;chatLine('','친구가 들어오면 여기서 같이 이야기할 수 있어요',true);roomNS.presence({host:true,nick:ROLE==='oppa'?'tori':'bunny'}).catch(()=>{});}
   else{$('wlSub').textContent='방에서 쓸 이름을 알려 주세요';$('joinForm').hidden=false;}
 })();
 
@@ -1501,7 +1501,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!gbScrim.hidden)clo
 $('gbForm').addEventListener('submit',async e=>{
   e.preventDefault();const text=$('gb-text').value.trim().slice(0,100);if(!text||!gbDB)return;
   const u=await userP;const uid=u&&await u.id().catch(()=>null);if(!uid){toast('로그인한 상태에서만 쓸 수 있어요');return;}
-  const nick=IS_OWNER?'방 주인':(selfG?selfG.nick:'친구'),color=IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1]);
+  const nick=IS_OWNER?(ROLE==='oppa'?'tori':'bunny'):(selfG?selfG.nick:'친구'),color=IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1]);
   const btn=$('gb-save');btn.disabled=true;
   try{const ref=gbDB.collection('guestbook').doc(uid);const snap=await ref.get();const old=snap.exists&&Array.isArray((snap.data()||{}).notes)?snap.data().notes:[];
     const oldShots=snap.exists&&Array.isArray((snap.data()||{}).shots)?snap.data().shots:[];
@@ -1514,7 +1514,7 @@ $('gbForm').addEventListener('submit',async e=>{
 
 /* ---------- 인증샷: snap the room and hang it in the photo album ---------- */
 const shotScrim=$('shotScrim'),albumScrim=$('albumScrim');let lastShot=null;
-function whoNow(){return{nick:IS_OWNER?'방 주인':(selfG?selfG.nick:'친구'),color:IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1])};}
+function whoNow(){return{nick:IS_OWNER?(ROLE==='oppa'?'tori':'bunny'):(selfG?selfG.nick:'친구'),color:IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1])};}
 function fmtShot(at){const d=new Date(at);return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;}
 function capFill(cap,nick,color,at){cap.innerHTML='';const b=document.createElement('b');b.textContent=nick;b.style.background=color;const tm=document.createElement('time');tm.textContent=fmtShot(at);cap.append(b,tm);}
 function openShot(sh,fresh){
@@ -1562,7 +1562,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){shotScrim.hidden=tr
 
 
 /* ---------- 우리 둘: schedule board, fridge notes and status lines — only the two owners can read or write ---------- */
-const WHO={me:{name:'나',color:'#c0574a'},oppa:{name:'오빠',color:'#2a3a5a'},both:{name:'같이',color:'#8f9d3e'}};
+const WHO={me:{name:'bunny',color:'#c0574a'},oppa:{name:'tori',color:'#2a3a5a'},both:{name:'같이',color:'#8f9d3e'}};
 let ROLE=null;try{ROLE=localStorage.getItem('bunny-role');}catch{}
 if(!ROLE&&window.bunnyRoleHint)ROLE=window.bunnyRoleHint;
 if(!WHO[ROLE]||ROLE==='both')ROLE=null;
@@ -1647,13 +1647,13 @@ function chatLine(nick,text,sys){const li=document.createElement('li');if(sys)li
   if(nick){const b=document.createElement('b');b.textContent=nick;li.appendChild(b);}li.append(text);chatLog.appendChild(li);
   while(chatLog.children.length>30)chatLog.firstChild.remove();chatLog.scrollTop=chatLog.scrollHeight;}
 $('chatForm').addEventListener('submit',e=>{e.preventDefault();const text=$('chatIn').value.trim().slice(0,60);if(!text||!roomNS)return;
-  $('chatIn').value='';const nick=IS_OWNER?'방 주인':(selfG?selfG.nick:'친구');chatLine(nick,text);
+  $('chatIn').value='';const nick=IS_OWNER?(ROLE==='oppa'?'tori':'bunny'):(selfG?selfG.nick:'친구');chatLine(nick,text);
   if(IS_OWNER){byId.me.pop=3;byId.me.popText=text.slice(0,20);}else if(selfG){selfG.say=text.slice(0,20);selfG.sayUntil=performance.now()/1000+3.5;}
   roomNS.presence({chat:{text,at:Date.now()}}).catch(()=>{});});
 const seenAct={},seenChat={};
 function onPeerExtras(list){
   list.forEach(pe=>{if(pe.kind!=='viewer'||pe.isMe)return;const pr=pe.presence||{};
-    const nick=pr.host?'방 주인':String(pr.nick||'친구').slice(0,10);
+    const nick=pr.host?String(pr.nick||'bunny').slice(0,10):String(pr.nick||'친구').slice(0,10);
     if(pr.act&&pr.act.at!==seenAct[pe.peer]){const first=seenAct[pe.peer]===undefined;seenAct[pe.peer]=pr.act.at;if(!first&&['cola','pat','angry','rest','rest2','snack','coffee','sofa','treeglow'].includes(pr.act.k))act(pr.act.k,true);}
     if(pr.chat&&pr.chat.at!==seenChat[pe.peer]){const first=seenChat[pe.peer]===undefined;seenChat[pe.peer]=pr.chat.at;
       if(!first||Date.now()-pr.chat.at<15000){const text=String(pr.chat.text||'').slice(0,60);chatLine(nick,text);
@@ -1788,7 +1788,7 @@ function step(now){
      const nt=ms==='walk'?'지금은 제로 콜라랑 <b>산책 중</b>이에요<br>1시에 돌아와요 🐾':'지금은 셋이 <b>꿀잠 자는 중</b>이에요<br>7시에 일어나요 zZ';if(an.innerHTML!==nt)an.innerHTML=nt;}
    an.hidden=!(out&&VIEW!==ms);
    const op=byId.oppa,ob=$('oppaBtn'),away=op.scene==='court'||op.scene==='string';let ot='';
-   if(VIEW===op.scene&&away)ot='🏠 집으로';else if(VIEW!==op.scene&&op.scene!=='walk')ot=op.scene==='court'?'🎾 코트의 오빠':op.scene==='string'?'🧵 오빠 작업방':'👀 오빠 보기';
+   if(VIEW===op.scene&&away)ot='🏠 집으로';else if(VIEW!==op.scene&&op.scene!=='walk')ot=op.scene==='court'?'🎾 코트의 tori':op.scene==='string'?'🧵 tori 작업방':'👀 tori 보기';
    ob.hidden=!ot;if(ob.textContent!==ot)ob.textContent=ot;}
   // playtime: hearts and hops around the dogs
   if((byId.me.actKey==='play'||byId.me.actKey==='l_play')&&!byId.me.path.length&&t>nextHeart){nextHeart=t+1.4;
