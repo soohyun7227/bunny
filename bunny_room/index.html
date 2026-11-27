@@ -548,8 +548,8 @@ function decorWall(t){const night=isNight();
   R(60,30,4,4,'#c98b5e');R(61,27,2,3,P.leafL);R(96,30,4,4,'#e3e6dc');R(97,28,1,2,'#c0574a');R(98,27,1,3,P.leaf); // sill plants
   for(let i=0;i<12;i++){const x=57+i*4,y=12+(i%2);R(x,y,2,2,night?(Math.floor(t*2+i)%3?'#ffd98a':'#fff3c4'):(i%2?'#e9c46a':'#f2d68f'));}
   // calendar with rings
-  R(37,13,15,16,'#d6cfb8');R(36,12,15,16,'#f4f1e6');R(36,12,15,4,P.yel);R(39,11,1,2,'#5e3d30');R(47,11,1,2,'#5e3d30');
-  for(let i=0;i<12;i++)R(38+(i%4)*3,18+Math.floor(i/4)*3,2,2,i===5?'#c0574a':'#c7c2b2');
+  R(37,9,15,15,'#d6cfb8');R(36,8,15,15,'#f4f1e6');R(36,8,15,4,P.yel);R(39,7,1,2,'#5e3d30');R(47,7,1,2,'#5e3d30');
+  for(let i=0;i<12;i++)R(38+(i%4)*3,14+Math.floor(i/4)*3,2,2,i===5?'#c0574a':'#c7c2b2');
   // guestbook cork board with pins and notes
   R(110,10,13,13,'#9e7650');R(109,9,13,13,'#b98d63');R(111,11,4,4,'#f4eab0');R(116,12,4,4,'#f1c9c9');R(112,17,5,4,'#cfe1e6');R(118,18,2,3,'#f4f1e6');
   R(113,11,1,1,'#c0574a');R(118,12,1,1,'#5f7f4f');R(114,17,1,1,'#e2b54a');
@@ -605,8 +605,6 @@ const FURN=[
     R(12,62,7,6,'#a7ad84');R(15,62,1,6,'#f4f1e6');R(12,64,7,1,'#f4f1e6');
     ctx.restore();}},
   {y:98,d(){ctx.save();ctx.translate(-12,44);E(44,60,21,15,P.yelD);E(44,56,21,15,P.yel);E(40,47,14,7,P.yelL);R(32,43,9,1,'#f4d98a');R(29,61,14,1,P.yelD);R(50,66,10,1,P.yelD);R(57,52,6,1,P.yelD);R(26,52,5,1,P.yelD);E(55,58,6,5,P.cush);E(55,57,5,4,P.cushL);ctx.restore();}}, // big beanbag
-  {y:64,d(){ctx.save();ctx.translate(0,0);R(110,54,12,10,P.pot);R(110,62,12,2,P.potD);R(111,55,10,1,'#f2f4ec');R(115,30,2,24,'#8e7a52');R(113,40,2,8,'#8e7a52');R(118,36,2,10,'#8e7a52');
-    [[108,28,P.leaf],[114,24,P.leafL],[120,28,P.leaf],[106,36,P.leafL],[122,34,P.leafD],[110,42,P.leafD],[120,44,P.leafL],[116,32,P.leafD]].forEach(([x,y,c])=>{R(x,y,6,3,c);R(x+1,y-1,4,1,c);R(x+1,y+3,4,1,c);});ctx.restore();}}, // tall plant (right of the desk)
   {y:64,d(){ // desk with monitors, lamp, mug, notebook
     const sc=isNight()?'#a9dcd6':P.glass;
     R(60,30,18,13,'#3e3f3a');R(61,31,16,10,sc);R(61,37,16,4,'#e3d7b0');R(63,33,5,2,'#ffffff');R(68,43,2,3,'#3e3f3a');R(65,45,8,1,'#3e3f3a');
@@ -619,26 +617,33 @@ const FURN=[
     R(60,47,6,4,'#c0574a');R(60,47,6,1,'#d27766');R(65,47,1,4,'#f4f1e6'); // notebook
     R(99,40,4,7,'#2a2a2a');R(99,42,4,2,'#c0574a');R(100,40,2,1,'#9a9a9a');R(100,43,1,1,'#ffffff');}},
   {y:84,d(){R(74,70,12,8,'#8e6450');R(75,72,10,1,'#7a5240');R(75,74,10,1,'#7a5240');R(74,70,12,2,'#a07258');R(74,78,12,4,'#7a5240');R(74,78,12,1,'#8e6450');R(75,82,2,5,P.woodD);R(83,82,2,5,P.woodD);}}, // wooden chair
-  {y:66,d(){ // wooden bookshelf: three shelves of books, a plant, a photo and a little dog figure
-    R(125,30,28,36,P.woodD);R(126,31,26,34,'#6b4a3a');R(125,30,28,2,P.woodL);
-    for(const y of[42,53])R(126,y,26,2,P.wood);R(126,63,26,2,P.wood);R(126,32,2,32,P.wood);R(150,32,2,32,P.wood);
-    // top shelf: books + small plant
-    [[129,'#c0574a',9],[131,'#e2b54a',8],[133,'#7f9670',10],[135,'#f4f1e6',9],[137,'#5b8fd9',8]].forEach(([x,c,h])=>{R(x,42-h,2,h,c);R(x,42-h,2,1,'#ffffff22');});
-    R(141,37,7,5,P.pot);R(142,33,2,4,P.leaf);R(144,31,2,6,P.leafL);R(146,34,2,3,P.leafD);
-    // middle shelf: leaning books + photo frame
-    [[128,'#a7ad84',9],[130,'#c98b5e',10],[132,'#8e2f2f',8],[134,'#e9d8a6',9]].forEach(([x,c,h])=>R(x,53-h,2,h,c));R(136,46,2,7,'#5e3d30');
-    R(140,45,8,8,'#5e3d30');R(141,46,6,6,'#cfe1e6');R(142,49,3,3,'#d9b088');R(143,48,1,1,'#1a1210');
-    // bottom shelf: stacked books + dog figure
-    R(128,60,10,3,'#7f9670');R(129,57,9,3,'#e2b54a');R(128,54,10,3,'#c0574a');
-    R(142,58,6,5,'#d9b088');R(141,56,3,3,'#d9b088');R(141,57,1,1,'#1a1210');R(146,56,2,2,'#d9b088');
-    R(126,65,3,2,P.woodD);R(149,65,3,2,P.woodD);}},
+  {y:66,d(){ // bookshelves on both sides of the desk and one more on the far right
+    const BK=['#c0574a','#e2b54a','#7f9670','#f4f1e6','#5b8fd9','#a7ad84','#c98b5e','#8e2f2f','#e9d8a6','#6b8fa8','#d9b088'];
+    const shelf=(x,w,seed,extras)=>{
+      R(x,26,w,40,P.woodD);R(x+1,27,w-2,38,'#6b4a3a');R(x,26,w,2,P.woodL);
+      for(const y of[38,51])R(x+1,y,w-2,2,P.wood);R(x+1,63,w-2,2,P.wood);R(x+1,28,2,36,P.wood);R(x+w-3,28,2,36,P.wood);
+      [[38,10],[51,11],[63,10]].forEach(([base,hmax],row)=>{let bx=x+3,k=seed+row*7;
+        while(bx<x+w-4){const bw=(k%3===0)?3:2,bh=hmax-(k*5%4),c=BK[k%BK.length];
+          if(extras[row]&&bx>x+w-12){break;}
+          if(k%9===4&&bx<x+w-7){R(bx,base-3,6,3,c);R(bx,base-6,6,3,BK[(k+3)%BK.length]);bx+=7;k+=2;continue;}   // a little stack
+          R(bx,base-bh,bw,bh,c);R(bx,base-bh,bw,1,'#ffffff2a');bx+=bw+((k%4===0)?1:0);k++;}});
+      extras.forEach((e,row)=>{if(!e)return;const base=[38,51,63][row],ex=x+w-11;
+        if(e==='plant'){R(ex+1,base-5,7,5,P.pot);R(ex+2,base-10,2,5,P.leaf);R(ex+4,base-12,2,7,P.leafL);R(ex+6,base-9,2,4,P.leafD);}
+        if(e==='photo'){R(ex,base-9,8,9,'#5e3d30');R(ex+1,base-8,6,7,'#cfe1e6');R(ex+2,base-5,3,3,'#d9b088');R(ex+3,base-6,1,1,'#1a1210');}
+        if(e==='dog'){R(ex+2,base-5,6,5,'#3b393e');R(ex+1,base-7,3,3,'#3b393e');R(ex+1,base-6,1,1,'#f08a9a');}
+        if(e==='mug'){R(ex+2,base-5,5,5,'#f4f1e6');R(ex+7,base-4,1,2,'#f4f1e6');R(ex+3,base-5,3,1,'#8e6450');}
+        if(e==='globe'){R(ex+2,base-8,6,6,'#8fbcb5');R(ex+3,base-6,3,2,'#a7ad84');R(ex+4,base-2,2,2,'#5e3d30');}});
+      R(x+1,65,3,2,P.woodD);R(x+w-4,65,3,2,P.woodD);};
+    shelf(32,24,1,['plant',null,'mug']);
+    shelf(105,23,4,[null,'photo',null]);
+    shelf(129,24,7,['globe',null,'dog']);}},
   {y:176,d(){E(28,172,17,8,P.cush);E(28,171,14,6,'#57744d');E(28,171,12,5,P.cushL);for(let k=0;k<20;k++){const a=k/20*Math.PI*2;R(28+Math.cos(a)*15,172+Math.sin(a)*7,1,1,'#6f8c63');}}}, // dog cushion 1
   {y:180,d(){E(130,176,17,8,P.cush);E(130,175,14,6,'#57744d');E(130,175,12,5,P.cushL);for(let k=0;k<20;k++){const a=k/20*Math.PI*2;R(130+Math.cos(a)*15,176+Math.sin(a)*7,1,1,'#6f8c63');}}}, // dog cushion 2
   {y:190,d(){R(70,186,22,5,'#efe6d0');R(70,190,22,1,'#d9cdb0');E(76,186,4,1,'#4a4a4a');E(76,186,3,1,'#7a5a3a');E(86,186,4,1,'#cfd8dc');R(72,191,1,2,'#d9cdb0');R(89,191,1,2,'#d9cdb0');}}, // bowls
   {y:190,d(){R(50,170,10,9,'#b55a46');R(50,170,10,2,'#c46b56');R(52,174,6,1,'#7d3a2d');R(54,179,2,11,P.woodD);R(59,170,2,5,P.yel);R(59,170,3,2,P.yel);R(51,176,2,2,'#f4f1e6');}}, // mailbox with flag
 ];
 const SHADOWS=[];
-function softShadows(){ctx.fillStyle=P.shadow;[[32,120,21,3],[116,66,8,2],[80,71,26,3],[80,86,8,2],[139,67,14,2],[21,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
+function softShadows(){ctx.fillStyle=P.shadow;[[32,120,21,3],[44,67,12,2],[116,67,11,2],[80,71,26,3],[80,86,8,2],[141,67,12,2],[21,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
 /* overlay tags */
 ACTORS.forEach(a=>{const d=document.createElement('div');d.className='tag'+(a.kind==='dog'?' dog':'');d.innerHTML='<div class="bubble"></div><div class="name"></div>';d.querySelector('.name').textContent=a.name;ov.appendChild(d);a.el=d;a.bEl=d.querySelector('.bubble');});
 
@@ -687,7 +692,7 @@ cv.addEventListener('click',e=>{
   if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
   if(x>=58&&x<=100&&y>=28&&y<=47){act('angry');return;}
   if(x>=10&&x<=56&&y>=82&&y<=122){act('rest');return;}
-  if(x>=33&&x<=54&&y>=8&&y<=30){openCal();return;}
+  if(x>=33&&x<=54&&y>=5&&y<=24){openCal();return;}
   const hit=ACTORS.find(a=>a.scene==='work'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);
   if(hit){poke(hit);return;}
   if(byId.me.scene!=='work'&&IS_OWNER!==false)return;
@@ -799,7 +804,7 @@ async function toggleCheck(ev,v){
     ['latte','choco'].forEach(id=>{byId[id].pop=2;byId[id].popText='멍멍!';});toast('「'+ev.title+'」 완료!');}
 }
 /* today badge on the wall calendar */
-const badge=document.createElement('div');badge.className='badge tap';badge.style.left=(51/W*100)+'%';badge.style.top=(12/H*100)+'%';badge.textContent='!';ov.appendChild(badge);
+const badge=document.createElement('div');badge.className='badge tap';badge.style.left=(51/W*100)+'%';badge.style.top=(8/H*100)+'%';badge.textContent='!';ov.appendChild(badge);
 function updateBadge(){
   if(IS_OWNER!==true){badge.hidden=true;return;}
   if(!cal.loaded){badge.className='badge tap';badge.textContent='!';return;}
