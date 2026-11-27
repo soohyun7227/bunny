@@ -180,7 +180,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     </form>
     <p class="empty">들어가면 방 주인과 다른 친구들에게 내 캐릭터가 보여요.</p>
     <form class="add" id="ownerForm" hidden>
-      <label for="o-key">방 주인 열쇠<input id="o-key" autocomplete="off" placeholder="열쇠를 붙여 넣으세요"></label>
+      <label for="o-key">방 주인 열쇠<input id="o-key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="열쇠를 붙여 넣으세요"></label>
       <button class="ib" type="submit">주인으로 들어가기</button>
     </form>
     <button class="ib" id="ownerBtn" type="button" hidden style="align-self:flex-start;margin-top:6px">방 주인이에요</button>
@@ -284,7 +284,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   }
 
   // lets the owner unlock a device by typing the owner key (home-screen apps keep their own storage)
-  window.bunnyClaimOwner=async key=>{const ctx=await init();if(!ctx)return false;const r=await ctx.sb.rpc('claim_owner',{key});return !!(r&&r.data);};
+  window.bunnyClaimOwner=async key=>{const ctx=await init();if(!ctx)return 'offline';const r=await ctx.sb.rpc('claim_owner',{key});if(r&&r.error){console.warn('[bunny] claim',r.error.message);return 'offline';}return r&&r.data===true;};
   window.claude={use(name){
     if(!['db','user','room'].includes(name))return Promise.resolve(null);
     return init().then(ctx=>{
@@ -914,9 +914,14 @@ $('joinForm').addEventListener('submit',e=>{
 if(window.bunnyClaimOwner){
   $('ownerBtn').hidden=false;
   $('ownerBtn').onclick=()=>{$('ownerForm').hidden=false;$('ownerBtn').hidden=true;$('o-key').focus();};
-  $('ownerForm').addEventListener('submit',async e=>{e.preventDefault();const k=$('o-key').value.trim();if(!k)return;
-    const ok=await window.bunnyClaimOwner(k).catch(()=>false);
-    if(ok){toast('방 주인으로 확인됐어요');setTimeout(()=>location.reload(),700);}else toast('열쇠가 맞지 않아요');});
+  $('ownerForm').addEventListener('submit',async e=>{e.preventDefault();
+    // tolerate pasted spaces/quotes and a keyboard that capitalised the first letter
+    const raw=$('o-key').value.replace(/[^A-Za-z0-9_-]/g,'');if(!raw)return;
+    const tries=[raw,raw[0].toLowerCase()+raw.slice(1),raw[0].toUpperCase()+raw.slice(1)];
+    let res='bad';for(const k of tries){res=await window.bunnyClaimOwner(k).catch(()=>'offline');if(res===true||res==='offline')break;}
+    if(res===true){toast('방 주인으로 확인됐어요');setTimeout(()=>location.reload(),700);}
+    else if(res==='offline')toast('서버에 연결하지 못했어요. 잠시 후 다시 해 주세요');
+    else toast('열쇠가 맞지 않아요. 복사해서 그대로 붙여 넣어 주세요');});
 }
 
 /* guestbook: one card per visitor (their last five notes), readable by everyone */
