@@ -1394,7 +1394,7 @@ if(window.bunnyClaimOwner){
     if(taps.length>=5){taps=[];if(window.parent!==window){try{window.top.location.href='http://bunnytori.com/bunny_room/login.php';return;}catch(e){}}$('ownerForm').hidden=false;$('o-key').focus();}});
   $('ownerForm').addEventListener('submit',async e=>{e.preventDefault();
     // tolerate pasted spaces/quotes and a keyboard that capitalised the first letter
-    const raw=$('o-key').value.replace(/[^A-Za-z0-9_-]/g,'');if(!raw)return;
+    const raw=$('o-key').value.trim();if(!raw)return;
     const tries=[raw,raw[0].toLowerCase()+raw.slice(1),raw[0].toUpperCase()+raw.slice(1)];
     let res='bad';for(const k of tries){res=await window.bunnyClaimOwner(k).catch(()=>'offline');if(res===true||res==='offline')break;}
     if(res===true){toast('방 주인으로 확인됐어요');if(!ROLE){$('ownerForm').hidden=true;$('joinForm').hidden=true;$('wlRole').hidden=false;document.querySelectorAll('#wlRole [data-wrole]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>location.reload(),300)));}else setTimeout(()=>location.reload(),700);}
