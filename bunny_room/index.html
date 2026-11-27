@@ -268,7 +268,7 @@ ACTORS.forEach((a,i)=>Object.assign(a,{scene:'work',x:70+i*18,y:140,zone:'mid',p
 
 const SPOT={
   desk:{x:80,y:80,pose:'sitback',z:'top'},
-  beanbag:{x:24,y:62,pose:'sit',z:'top'},
+  beanbag:{x:30,y:107,pose:'sit',z:'mid'},
   window:{x:100,y:96,pose:'standback',z:'mid'},
   rug:{x:80,y:132,pose:'stretch',z:'mid'},
   tree:{x:24,y:90,pose:'standback',z:'mid'},
@@ -486,7 +486,9 @@ const FURN=[
     R(30,58,8,7,P.yel);R(33,58,2,7,'#c0574a');R(30,61,8,1,'#c0574a');R(5+28,56,2,2,'#c0574a');
     R(12,62,7,6,'#a7ad84');R(15,62,1,6,'#f4f1e6');R(12,64,7,1,'#f4f1e6');
     ctx.restore();}},
-  {y:52,d(){ctx.save();ctx.translate(-18,0);E(44,58,15,11,P.yelD);E(44,55,15,11,P.yel);E(41,49,10,5,P.yelL);R(36,46,6,1,'#f4d98a');R(34,59,10,1,P.yelD);R(48,62,7,1,P.yelD);R(52,52,4,1,P.yelD);E(50,57,4,3,P.cush);E(50,56,3,2,P.cushL);ctx.restore();}}, // big beanbag
+  {y:98,d(){ctx.save();ctx.translate(-12,44);E(44,58,15,11,P.yelD);E(44,55,15,11,P.yel);E(41,49,10,5,P.yelL);R(36,46,6,1,'#f4d98a');R(34,59,10,1,P.yelD);R(48,62,7,1,P.yelD);R(52,52,4,1,P.yelD);E(50,57,4,3,P.cush);E(50,56,3,2,P.cushL);ctx.restore();}}, // big beanbag
+  {y:64,d(){ctx.save();ctx.translate(-94,0);R(110,54,12,10,P.pot);R(110,62,12,2,P.potD);R(111,55,10,1,'#f2f4ec');R(115,30,2,24,'#8e7a52');R(113,40,2,8,'#8e7a52');R(118,36,2,10,'#8e7a52');
+    [[108,28,P.leaf],[114,24,P.leafL],[120,28,P.leaf],[106,36,P.leafL],[122,34,P.leafD],[110,42,P.leafD],[120,44,P.leafL],[116,32,P.leafD]].forEach(([x,y,c])=>{R(x,y,6,3,c);R(x+1,y-1,4,1,c);R(x+1,y+3,4,1,c);});ctx.restore();}}, // tall plant (left corner)
   {y:64,d(){ // desk with monitors, lamp, mug, notebook
     const sc=isNight()?'#a9dcd6':P.glass;
     R(60,30,18,13,'#3e3f3a');R(61,31,16,10,sc);R(61,37,16,4,'#e3d7b0');R(63,33,5,2,'#ffffff');R(68,43,2,3,'#3e3f3a');R(65,45,8,1,'#3e3f3a');
@@ -512,7 +514,7 @@ const FURN=[
   {y:190,d(){R(50,170,10,9,'#b55a46');R(50,170,10,2,'#c46b56');R(52,174,6,1,'#7d3a2d');R(54,179,2,11,P.woodD);R(59,170,2,5,P.yel);R(59,170,3,2,P.yel);R(51,176,2,2,'#f4f1e6');}}, // mailbox with flag
 ];
 const SHADOWS=[];
-function softShadows(){ctx.fillStyle=P.shadow;[[26,66,14,3],[80,71,26,3],[80,86,8,2],[139,67,14,2],[115,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
+function softShadows(){ctx.fillStyle=P.shadow;[[32,112,15,3],[21,67,10,2],[80,71,26,3],[80,86,8,2],[139,67,14,2],[115,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
 /* overlay tags */
 ACTORS.forEach(a=>{const d=document.createElement('div');d.className='tag'+(a.kind==='dog'?' dog':'');d.innerHTML='<div class="bubble"></div><div class="name"></div>';d.querySelector('.name').textContent=a.name;ov.appendChild(d);a.el=d;a.bEl=d.querySelector('.bubble');});
 
@@ -561,7 +563,7 @@ cv.addEventListener('click',e=>{
   if(x>=47&&x<=63&&y>=166&&y<=192){openMail();return;}
   if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
   if(x>=58&&x<=100&&y>=28&&y<=47){act('angry');return;}
-  if(x>=8&&x<=42&&y>=40&&y<=70){act('rest');return;}
+  if(x>=14&&x<=50&&y>=86&&y<=116){act('rest');return;}
   if(x>=33&&x<=54&&y>=8&&y<=30){openCal();return;}
   const hit=ACTORS.find(a=>a.scene==='work'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);
   if(hit){poke(hit);return;}
