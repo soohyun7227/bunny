@@ -22,15 +22,17 @@
 *{box-sizing:border-box}
 html,body{background:var(--bg)}
 body{color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.5;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 28px}
-.wrap{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-.eyebrow{font-size:11px;letter-spacing:.08em;color:var(--accent);font-weight:700}
-h1{font-family:var(--f-display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
-.work{font-size:12px;color:var(--muted);margin-top:4px}
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));
+  padding-top:max(10px,env(safe-area-inset-top,0px));padding-bottom:max(20px,env(safe-area-inset-bottom,0px));margin:0}
+.wrap{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+header{display:flex;flex-direction:column;gap:6px}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eyebrow{display:none}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(18px,5.8vw,22px);margin:0;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.work{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
 .work b{color:var(--warm);font-weight:700}
 .clock{font-family:var(--f-pixel);font-size:12px;background:var(--panel);border:2px solid var(--line);padding:7px 9px;border-radius:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.stage{position:relative;border-radius:8px;overflow:hidden;box-shadow:0 0 0 3px var(--olive),0 10px 30px rgba(0,0,0,.35)}
+.stage{position:relative;width:min(100%,calc((100vh - 128px)*.8));width:min(100%,calc((100dvh - 128px)*.8));margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 0 0 3px var(--olive),0 10px 30px rgba(0,0,0,.35)}
 canvas#home{display:block;width:100%;height:auto;aspect-ratio:160/200;image-rendering:pixelated;cursor:pointer;touch-action:manipulation}
 .ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .tag{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
@@ -117,6 +119,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 .walkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .awaynote{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;background:rgba(255,253,243,.95);color:#26301f;border:2px solid #1f4a33;border-radius:10px;padding:8px 14px;font-size:13px;text-align:center;line-height:1.5;box-shadow:0 3px 0 rgba(0,0,0,.2);white-space:nowrap}
 .awaynote b{color:#1f4a33}
+@media (max-width:360px){.iconbtn{width:34px;height:32px}.clock{font-size:10px;padding:6px 7px}}
 .cambtn{position:absolute;left:8px;bottom:8px;z-index:3;width:42px;height:38px;display:grid;place-items:center;background:rgba(255,253,243,.94);color:#1f4a33;border:2px solid #1f4a33;border-radius:8px;cursor:pointer;padding:0;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .cambtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .cambtn:active{transform:translateY(1px)}
@@ -142,12 +145,11 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <div class="eyebrow">우리집 작업 코너</div>
-      <h1>Bunny's Office</h1>
-      <div class="work" id="work"></div>
+    <div class="hbar">
+    <h1>Bunny's Office</h1>
+    <div style="display:flex;gap:6px;align-items:center;flex:none"><button class="iconbtn bellicon" id="bellBtn" type="button" aria-pressed="false" aria-label="벨소리 꺼짐" title="벨소리 꺼짐"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 1h2v1h1v1h1v1h1v5h1v1h1v2H2v-2h1V9h1V4h1V3h1V2h1zM6 13h4v1H9v1H7v-1H6z"/><path class="slash" fill="currentColor" d="M2 1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1H9V9H8V8H7V7H6V6H5V5H4V4H3V3H2z"/></svg></button><button class="iconbtn" id="reloadBtn" type="button" aria-label="화면 새로고침" title="새로고침"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 2h4v1h1v1h1V2h1v5H9V6h2V5h-1V4H7v1H6v1H5v4h1v1h1v1h3v-1h1v-1h1V9h2v2h-1v1h-1v1h-1v1H6v-1H5v-1H4v-1H3V6h1V5h1V4h1V3h1z"/></svg></button><span class="clock" id="clock">--:--</span></div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center"><button class="iconbtn bellicon" id="bellBtn" type="button" aria-pressed="false" aria-label="벨소리 꺼짐" title="벨소리 꺼짐"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 1h2v1h1v1h1v1h1v5h1v1h1v2H2v-2h1V9h1V4h1V3h1V2h1zM6 13h4v1H9v1H7v-1H6z"/><path class="slash" fill="currentColor" d="M2 1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1H9V9H8V8H7V7H6V6H5V5H4V4H3V3H2z"/></svg></button><button class="iconbtn" id="reloadBtn" type="button" aria-label="화면 새로고침" title="새로고침"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 2h4v1h1v1h1V2h1v5H9V6h2V5h-1V4H7v1H6v1H5v4h1v1h1v1h3v-1h1v-1h1V9h2v2h-1v1h-1v1h-1v1H6v-1H5v-1H4v-1H3V6h1V5h1V4h1V3h1z"/></svg></button><span class="clock" id="clock">--:--</span></div>
+    <div class="work" id="work"></div>
   </header>
 
   <div class="stage">
