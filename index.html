@@ -326,24 +326,21 @@ function person(c,ox,oy,L,pose,frame,k=1){
     if(L.pattern&&L.pattern[ch]&&((x+y)%2===0))col=L.pattern[ch];
     Rc(c,ox+x*k,oy+y*k,k,k,col);}});
 }
-const D_STAND=[".ll........","lhhl....ll.","hhhdd..lhhl","hehddlllhh.","nbhddhhhhh.",".hhhhhhhhh.","..dhddhdhd."];
-const D_LEGS=["..hd...hd..","...hd..hd..","..hd....hd."];
-const D_SLEEP=["...lllll...",".llhhhhhl..","hhddhhhhhhl","heedhhhhhhh","nbhddhhhhd.",".ddddddddd."];
+const D_POSE={"sit": [".......oo.......", "......ollo......", ".....olllho.....", "....olhlhhho....", "..oolhhhhhhdoo..", ".odohhhhhhhhodo.", "odolhhehhheddodo", "oddohbhhnhhboddo", "oddodhhhthddoddo", "odddodhhhddodddo", ".oddooddddooddo.", "..oolhoooohdoo..", "...ohhhhhhhdoho.", "...ohhhhhhhdohdo", "...odoohhoododdo", "....ohdoohdoooo.", "....oddooddo...."], "walk1": ["................", ".......oo.......", "......ollo......", ".....olllho.....", "....olhlhhho....", "..oolhhhhhhdoo..", ".odohhhhhhhhodo.", "odolhhehhheddodo", "oddohbhhnhhboddo", "oddodhhhthddoddo", "odddodhhhddodddo", ".oddooddddooddo.", "..oohhoooohdooo.", "...ohoohhhhdohdo", "...oohdohoododdo", "....oddoohdoooo.", ".....ooooddo...."], "walk2": [".......oo.......", "......ollo......", ".....olllho.....", "....olhlhhho....", "..oolhhhhhhdoo..", ".odohhhhhhhhodo.", "odolhhehhheddodo", "oddohbhhnhhboddo", "oddodhhhthddoddo", "odddodhhhddodddo", ".oddooddddooddo.", "..oolhoooohdoo..", "...ohhhhhhhdoho.", "...ohhhhhoodohdo", "...odoohohdooddo", "....ohdooddoooo.", "....oddoooo....."], "sleep": ["................", "................", "................", "................", "................", "................", "................", "...ooooo........", "..olhhhhooo.....", ".olhhhhhdohoo...", ".ohhhhhhdohhho..", ".ohhehhedohhhdo.", ".odbhnhdbohhhdoo", ".oodddddohhhddoo", ".odooooohhdddoo.", "..oooodddddooo..", "......ooooo....."]};
 function dog(c,ox,oy,L,pose,frame,flip,k=1){
-  const rows=pose==='sleep'?D_SLEEP:D_STAND.concat([D_LEGS[pose==='walk'?frame:0]]);
-  rows.forEach((r,y)=>{for(let x=0;x<11;x++){const ch=r[x];if(ch==='.')continue;
-    let col={h:L.h,l:L.l,d:L.d,e:L.eye,n:'#1a1210',b:'#e99a8c'}[ch];
-    if(ch==='h'&&(x*3+y*5)%7===0)col=L.d;
+  // front-facing sitting poodle (16x17), its own dark outline included
+  const rows=pose==='sleep'?D_POSE.sleep:pose==='walk'?(frame===2?D_POSE.walk2:D_POSE.walk1):D_POSE.sit;
+  rows.forEach((r,y)=>{for(let x=0;x<16;x++){const ch=r[x];if(ch==='.')continue;
+    let col={o:L.o,h:L.h,l:L.l,d:L.d,e:L.eye,n:'#1a1210',t:'#f08a9a',b:'#e99a8c'}[ch];
     if(ch==='h'&&(x*5+y*3)%11===0)col=L.l;
-    Rc(c,ox+(flip?10-x:x)*k,oy+y*k,k,k,col);}});
-  if(pose!=='sleep'){const ex=flip?ox+9*k:ox+1*k;Rc(c,ex,oy+3*k,1,1,'#ffffff');}
+    Rc(c,ox+(flip?15-x:x)*k,oy+y*k,k,k,col);}});
 }
 
 /* ---------- cast ---------- */
 const ACTORS=[
   {id:'me',name:'나',kind:'person',look:null},
-  {id:'latte',name:'제로',kind:'dog',look:{h:'#d9b088',l:'#ecd0ac',d:'#b98f62',eye:'#1a1210'}},
-  {id:'choco',name:'콜라',kind:'dog',look:{h:'#3b393e',l:'#5c5a62',d:'#262529',eye:'#0e0d0f'}},
+  {id:'latte',name:'제로',kind:'dog',look:{o:'#5a3a26',h:'#d9b088',l:'#ecd0ac',d:'#b98f62',eye:'#1a1210'}},
+  {id:'choco',name:'콜라',kind:'dog',look:{o:'#0b0a0c',h:'#4a474f',l:'#646169',d:'#33313a',eye:'#0b0a0c'}},
 ];
 const byId=Object.fromEntries(ACTORS.map(a=>[a.id,a]));
 /* outfits: grey hoodie + black pants while working (9–20), red check pyjamas otherwise */
@@ -586,12 +583,12 @@ function sprite2(kind,look,pose,frame,flip,x,y){
   let c=SPR.get(key);
   if(!c){const w=kind==='dog'?30:20,h=kind==='dog'?24:32,ox=2,oy=kind==='dog'?2:4;
     const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const tc=tmp.getContext('2d');
-    const draw=()=>{if(kind==='dog')dog(tc,ox,oy,look,pose,frame,flip,2);else person(tc,ox,oy,look,pose,frame,2);};
+    const draw=()=>{if(kind==='dog')dog(tc,ox,oy,look,pose,frame,flip,1);else person(tc,ox,oy,look,pose,frame,2);};
     draw();
     c=document.createElement('canvas');c.width=w;c.height=h;const cc=c.getContext('2d');
     // outline computed from the drawn sprite
     const d=tc.getImageData(0,0,w,h).data,out=cc.createImageData(w,h),o=out.data;
-    for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const i=(yy*w+xx)*4;if(d[i+3]>20)continue;
+    if(kind!=='dog')for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const i=(yy*w+xx)*4;if(d[i+3]>20)continue;
       for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=xx+dx,ny=yy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;if(d[(ny*w+nx)*4+3]>200){o[i]=43;o[i+1]=34;o[i+2]=32;o[i+3]=255;break;}}}
     cc.putImageData(out,0,0);cc.drawImage(tmp,0,0);c.ox=ox;c.oy=oy;SPR.set(key,c);}
   ctx.drawImage(c,Math.round(x)-c.ox,Math.round(y)-c.oy);
@@ -1142,7 +1139,7 @@ function step(now){
   const items=(VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0);}f.d(t);}}));
   ACTORS.filter(a=>a.scene===VIEW).forEach(a=>items.push({y:a.y,draw:()=>{
     const x=Math.round(a.x),y=Math.round(a.y);
-    if(a.kind==='dog'){R(x-9,y-1,18,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-3:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-11,y-(a.pose==='sleep'?12:16)+hop);}
+    if(a.kind==='dog'){R(x-7,y-1,14,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-2:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-8,y-17+hop);}
     else{const st=a.pose!=='sit'&&a.pose!=='sitback';if(st)R(x-7,y-1,14,2,'rgba(0,0,0,.14)');
       const bob=a.pose==='stretch'&&Math.floor(t*2)%2?-1:0;
       sprite2('person',a.look,a.pose,a.frame,false,x-8,y-(st?26:22)+bob);}
@@ -1154,7 +1151,7 @@ function step(now){
   drawHearts(dt);
   ACTORS.forEach(a=>{
     a.el.style.display=a.scene===VIEW?'':'none';
-    const top=a.kind==='dog'?(a.pose==='sleep'?13:17):(a.pose==='sit'||a.pose==='sitback'?23:a.pose==='stretch'?29:27);
+    const top=a.kind==='dog'?(a.pose==='sleep'?11:18):(a.pose==='sit'||a.pose==='sitback'?23:a.pose==='stretch'?29:27);
     a.el.style.left=a.x/W*100+'%';a.el.style.top=(a.y-top)/H*100+'%';
     const moving=a.kind==='dog'?a.pose==='walk':a.path.length>0;
     const txt=a.pop>0?a.popText:(a.id==='me'&&!moving?a.bubble:'');
