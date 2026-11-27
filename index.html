@@ -153,7 +153,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   </header>
 
   <div class="stage">
-    <canvas id="home" width="160" height="200" aria-label="픽셀 작업방. 내가 책상, 빈백, 러그를 오가고 강아지 두 마리가 따라다닙니다."></canvas>
+    <canvas id="home" width="320" height="400" aria-label="픽셀 작업방. 내가 책상, 빈백, 러그를 오가고 강아지 두 마리가 따라다닙니다."></canvas>
     <div class="ov" id="ov"></div>
     <div class="flash" id="flash"></div>
     <button class="walkbtn" id="walkBtn" type="button" hidden></button>
@@ -363,11 +363,14 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 </script>
 <script>
 (()=>{
-const W=160,H=200;
+const W=160,H=200,S=2; // logical grid 160×200, drawn on a 2× canvas so new art can use half-steps (x.5)
 const cv=document.getElementById('home');let ctx=cv.getContext('2d');
 const ov=document.getElementById('ov');
 const O='#2b2a24'; // outline
+const snap=v=>Math.round(v*S)/S;
 function R(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
+/* fine pixel: half-step positions for 2× detail */
+function F(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(snap(x),snap(y),snap(w),snap(h));}
 function B(x,y,w,h,c){R(x,y,w,h,O);R(x+1,y+1,w-2,h-2,c);} // outlined box
 function Rc(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
 let mode='auto';
@@ -639,18 +642,19 @@ function decorProps(t){
   E(58,142,2,2,P.yel);R(57,141,1,1,P.yelL);
   R(132,90,10,3,'#c0574a');R(133,87,9,3,'#f4f1e6');R(132,84,10,3,P.cush);R(133,85,2,1,'#e9c46a');
 }
-/* outlines: each shape gets a 1px edge in a darker shade of its own colour */
+/* outlines: each shape gets a 1-unit (2 screen px) edge in a darker shade of its own colour */
+const OUT_NB=[[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,2],[0,-2]];
 const OL={};
 function outlineOf(fn,w,h,fixed){
-  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  w*=S;h*=S;const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.setTransform(S,0,0,S,0,0);x.imageSmoothingEnabled=false;
   const keep=ctx;ctx=x;try{fn(0);}finally{ctx=keep;}
   const src=x.getImageData(0,0,w,h),d=src.data,out=x.createImageData(w,h),o=out.data;
   for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const i=(yy*w+xx)*4;if(d[i+3]>20)continue;
-    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=xx+dx,ny=yy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const j=(ny*w+nx)*4;
+    for(const [dx,dy] of OUT_NB){const nx=xx+dx,ny=yy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const j=(ny*w+nx)*4;
       if(d[j+3]>200){if(fixed){o[i]=fixed[0];o[i+1]=fixed[1];o[i+2]=fixed[2];}else{o[i]=d[j]*.52;o[i+1]=d[j+1]*.5;o[i+2]=d[j+2]*.5;}o[i+3]=255;break;}}}
   const r=document.createElement('canvas');r.width=w;r.height=h;r.getContext('2d').putImageData(out,0,0);return r;
 }
-function drawOutlined(key,fn,t){if(!OL[key])OL[key]=outlineOf(fn,W,H);ctx.drawImage(OL[key],0,0);fn(t);}
+function drawOutlined(key,fn,t){if(!OL[key])OL[key]=outlineOf(fn,W,H);ctx.drawImage(OL[key],0,0,W,H);fn(t);}
 /* characters: cached sprite + dark outline per look/pose/frame */
 const SPR=new Map();
 function sprite2(kind,look,pose,frame,flip,x,y){
@@ -684,18 +688,51 @@ const FURN=[
     R(7,122,11,13,'#f4e6b8');R(8,121,9,1,'#f4e6b8');R(7,134,11,1,'#e0cf8f');R(9,124,7,9,'#fff4cf');
     for(const y of[125,128,131])R(7,y,11,1,'#ead79a');R(12,121,1,14,'#ead79a');}},
   {y:98,d(){ctx.save();ctx.translate(-12,44);E(44,60,21,15,P.yelD);E(44,56,21,15,P.yel);E(40,47,14,7,P.yelL);R(32,43,9,1,'#f4d98a');R(29,61,14,1,P.yelD);R(50,66,10,1,P.yelD);R(57,52,6,1,P.yelD);R(26,52,5,1,P.yelD);E(55,58,6,5,P.cush);E(55,57,5,4,P.cushL);ctx.restore();}}, // big beanbag
-  {y:64,d(){ // desk with monitors, lamp, mug, notebook
-    const sc=isNight()?'#a9dcd6':P.glass;
-    R(60,30,18,13,'#3e3f3a');R(61,31,16,10,sc);R(61,37,16,4,'#e3d7b0');R(63,33,5,2,'#ffffff');R(68,43,2,3,'#3e3f3a');R(65,45,8,1,'#3e3f3a');
-    R(81,31,18,12,'#3e3f3a');R(82,32,16,9,sc);R(82,37,16,4,'#e3d7b0');R(84,34,7,1,'#ffffff');R(89,43,2,3,'#3e3f3a');R(86,45,8,1,'#3e3f3a');
-    R(56,46,48,6,P.woodL);R(56,46,48,1,'#a07258');R(56,52,48,10,P.wood);R(58,56,20,1,P.woodD);R(82,56,20,1,P.woodD);R(66,54,4,1,'#d9c7a0');R(90,54,4,1,'#d9c7a0');
-    R(57,62,3,8,P.woodD);R(100,62,3,8,P.woodD);
-    R(68,47,20,3,'#f4f1e6');for(let x=69;x<87;x+=2)R(x,48,1,1,'#d8d2c2');R(90,47,4,3,'#f4f1e6');R(91,48,2,1,'#cfc8b8');
-    R(57,40,2,6,'#3e3f3a');R(55,38,6,3,P.yel);R(56,41,4,1,'#c99b36'); // desk lamp
-    R(95,44,4,4,'#f4f1e6');R(99,45,1,2,'#f4f1e6');R(96,44,2,1,'#8e6450'); // mug
-    R(60,47,6,4,'#c0574a');R(60,47,6,1,'#d27766');R(65,47,1,4,'#f4f1e6'); // notebook
-    R(99,40,4,7,'#2a2a2a');R(99,42,4,2,'#c0574a');R(100,40,2,1,'#9a9a9a');R(100,43,1,1,'#ffffff');}},
-  {y:84,d(){R(74,70,12,8,'#8e6450');R(75,72,10,1,'#7a5240');R(75,74,10,1,'#7a5240');R(74,70,12,2,'#a07258');R(74,78,12,4,'#7a5240');R(74,78,12,1,'#8e6450');R(75,82,2,5,P.woodD);R(83,82,2,5,P.woodD);}}, // wooden chair
+  {y:64,d(){ // desk with monitors, lamp, mug, notebook — 2× detail (half-step pixels)
+    const BZ='#34352f',BZL='#4a4b44',GR='#83594a';
+    // left monitor: design tool
+    F(60,30,18,13,BZ);F(60.5,30.5,17,.5,BZL);
+    F(61,31,16,10.5,'#f4f1e6');F(61,31,16,1,'#e3ddca');F(61.5,31.5,.5,.5,'#c0574a');F(62.5,31.5,.5,.5,'#e2b54a');F(63.5,31.5,.5,.5,'#7f9670');
+    F(61,32,1.5,9.5,'#d9d3c0');for(const y of[33,34.5,36,37.5])F(61.5,y,.5,.5,'#7a7a70');
+    F(74.5,32,2.5,9.5,'#ece7d8');for(const y of[33,34,35])F(75,y,1.5,.5,'#c8c2b0');F(75,37,.5,.5,P.yel);F(76,37,.5,.5,'#7f9670');F(75,38,.5,.5,'#c0574a');F(76,38,.5,.5,'#5b8fd9');
+    F(63,32.5,11,8.5,'#ffffff');
+    F(64,33.5,5.5,4,'#f2d68f');F(64.5,34,2.5,.5,'#c99b36');F(64.5,35,4,.5,'#b98f62');F(64.5,36,3,.5,'#d9c7a0');
+    F(70.5,33.5,2.5,2.5,'#a7ad84');F(71,34,1.5,1.5,'#7f9670');F(70.5,36.5,2.5,.5,'#c8c2b0');
+    F(64,38,9,2.5,'#e7eedd');F(64.5,38.5,3,.5,'#7f9670');F(64.5,39.5,5,.5,'#b8c4a8');
+    F(70,37.5,.5,.5,'#5b8fd9');F(73,37.5,.5,.5,'#5b8fd9');F(70,40.5,.5,.5,'#5b8fd9');F(73,40.5,.5,.5,'#5b8fd9'); // selection handles
+    F(71.5,38.5,.5,1.5,'#26301f');F(72,39,.5,.5,'#26301f');
+    F(68,43,2,2.5,'#3e3f3a');F(68,43,.5,2.5,'#5a5b54');F(65,45,8,1,'#3e3f3a');F(65.5,45,7,.5,'#5a5b54');
+    // right monitor: writing a tennis blog post
+    F(81,31,18,12,BZ);F(81.5,31.5,17,.5,BZL);
+    F(82,32,16,9,'#ffffff');F(82,32,16,1,'#e3ddca');F(84,32.5,9,.5,'#ffffff');
+    F(83,33.5,7,4,'#cfe1e6');F(83,35.5,7,2,'#7f9670');F(83,35.5,7,.5,'#f4f1e6');F(86.5,35.5,.5,2,'#f4f1e6');F(88,34,1,1,'#e2b54a');
+    F(90.5,33.5,6.5,.5,'#26301f');F(90.5,34.5,5,.5,'#26301f');for(const y of[35.5,36.5,37.5])F(90.5,y,6.5,.5,'#c8c2b0');
+    F(83,38.5,14,.5,'#c8c2b0');F(83,39.5,10,.5,'#c8c2b0');F(93.5,39.5,.5,1,'#26301f');F(94.5,40,2.5,.5,P.yel);
+    F(89,43,2,2.5,'#3e3f3a');F(89,43,.5,2.5,'#5a5b54');F(86,45,8,1,'#3e3f3a');F(86.5,45,7,.5,'#5a5b54');
+    // desk
+    F(56,46,48,6,P.woodL);F(56,46,48,.5,'#a77a62');F(58,48,10,.5,GR);F(76,49.5,11,.5,GR);F(92,47.5,8,.5,GR);F(56,51.5,48,.5,'#6f4a3b');
+    F(56,52,48,10,P.wood);
+    for(const x of[58,82]){F(x,53,20,7.5,'#86604c');F(x+.5,53.5,19,6.5,P.wood);F(x+.5,53.5,19,.5,'#8a6250');F(x+9,56,2,1,'#c99b36');F(x+9,56,2,.5,'#e2b54a');}
+    F(78.5,53,3,7.5,'#4e3328');F(79,55,.5,5.5,'#c0574a');F(79.5,54.5,.5,6,'#e2b54a');F(80,55.5,.5,5,'#7f9670');F(80.5,55,.5,5.5,'#f4f1e6');
+    F(57,62,3,8,P.woodD);F(57.5,62,.5,8,'#7a5240');F(100,62,3,8,P.woodD);F(100.5,62,.5,8,'#7a5240');
+    // keyboard + mouse on an olive mat
+    F(68,47,20,3,'#e9e4d4');F(68,47,20,.5,'#ffffff');
+    for(let x=68.5;x<87.5;x+=1){F(x,47.5,.5,.5,'#aaa392');F(x+.5,48.5,.5,.5,'#aaa392');}F(73,49.5,9,.5,'#aaa392');
+    F(89,46.5,6.5,3.5,'#7f9670');F(89,46.5,6.5,.5,'#97a887');F(91.5,47,2,2.5,'#f4f1e6');F(91.5,47,2,.5,'#ffffff');F(92.5,47,.5,1,'#c8c2b0');
+    // desk lamp
+    F(57.5,41,1,4.5,'#3e3f3a');F(56,45,4,1,'#3e3f3a');F(56.5,45,3,.5,'#5a5b54');
+    F(55,38,6,3,P.yel);F(55.5,38,5,.5,'#f2d68f');F(55,40.5,6,.5,'#c99b36');F(56.5,41,3,.5,'#fff3c0');
+    // notebook + pen
+    F(60,47,6,4,'#c0574a');F(60,47,6,.5,'#d27766');F(65,47,1,4,'#f4f1e6');F(65.5,47,.5,4,'#e3ddca');F(61.5,48.5,3.5,.5,'#2a3a5a');F(64.5,48.5,.5,.5,'#e2b54a');
+    // zero cola can
+    F(99.5,40,3.5,7,'#26262a');F(99.5,40,3.5,.5,'#b8b8b8');F(100,40,.5,.5,'#e0e0e0');F(99.5,42,3.5,2,'#c0574a');F(100,42.5,2.5,.5,'#ffffff');F(100,40.5,.5,6.5,'#4a4a50');
+    // mug with a little heart
+    F(95.5,44.5,3,3.5,'#f4f1e6');F(95.5,44.5,3,.5,'#ffffff');F(96,44.5,2,.5,'#6b4a3a');F(98.5,45,.5,.5,'#f4f1e6');F(99,45.5,.5,1,'#f4f1e6');F(98.5,46.5,.5,.5,'#f4f1e6');F(96.5,46,.5,.5,'#f08a9a');F(97,46,.5,.5,'#f08a9a');F(96.5,46.5,1,.5,'#f08a9a');}},
+  {y:84,d(){ // wooden chair, seen from behind — 2× detail
+    F(74,70,12,8,'#8e6450');F(74,70,12,1.5,'#a07258');F(74.5,70,11,.5,'#b58a6e');
+    for(const x of[76,79.5,83]){F(x,71.5,1,6.5,'#7a5240');F(x,71.5,.5,6.5,'#86604c');}
+    F(74,78,12,4,'#7a5240');F(74,78,12,.5,'#a07258');F(74,81.5,12,.5,'#5e3d30');
+    F(75,82,2,5,P.woodD);F(75,82,.5,5,'#7a5240');F(83,82,2,5,P.woodD);F(83,82,.5,5,'#7a5240');}},
   {y:66,d(){ // bookshelves on both sides of the desk and one more on the far right
     const BK=['#c0574a','#e2b54a','#7f9670','#f4f1e6','#5b8fd9','#a7ad84','#c98b5e','#8e2f2f','#e9d8a6','#6b8fa8','#d9b088'];
     const shelf=(x,w,seed,extras)=>{
@@ -1253,8 +1290,8 @@ bellLabel();
 $('walkBtn').addEventListener('click',()=>{setView(VIEW==='walk'?'work':'walk',true);});
 /* crisp pixels: size the room to a whole number of screen pixels per art pixel */
 function snapStage(){const st=document.querySelector('.stage');if(!st)return;st.style.width='';
-  const avail=st.getBoundingClientRect().width,dpr=window.devicePixelRatio||1,k=Math.floor(avail*dpr/W);
-  if(k>=1&&k*W/dpr>=avail*.94)st.style.width=(k*W/dpr)+'px';} // only when it barely shrinks the room
+  const avail=st.getBoundingClientRect().width,dpr=window.devicePixelRatio||1,k=Math.floor(avail*dpr/cv.width);
+  if(k>=1&&k*cv.width/dpr>=avail*.94)st.style.width=(k*cv.width/dpr)+'px';} // only when it barely shrinks the room
 snapStage();addEventListener('resize',snapStage);
 /* night lighting */
 function glow(x,y,r,rgb,a){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
@@ -1344,11 +1381,12 @@ function step(now){
     a.pose=a.kind==='dog'?'walk':'stand';a.ft+=dt;if(a.ft>.15){a.ft=0;a.frame=a.frame===1?2:1;}
     if(!a.path.length){a.frame=0;const s=a.target&&SPOT[a.target];a.pose=s?s.pose:(a.kind==='dog'?'sit':'stand');}
   });
+  ctx.setTransform(S,0,0,S,0,0);ctx.imageSmoothingEnabled=false;
   if(VIEW==='walk')drawWalk(t);else if(VIEW==='work')drawRoom(t);else drawLounge(t);
   if(VIEW==='work')softShadows();
   if(VIEW==='lounge')loungeShadows();
   (VIEW==='walk'?[]:VIEW==='work'?SHADOWS:LSHADOWS).forEach(([x,y,w])=>{R(x,y,w,3,'rgba(70,50,25,.16)');R(x+2,y+3,w-4,1,'rgba(70,50,25,.1)');});
-  const items=(VIEW==='walk'?[]:VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0);}f.d(t);}}));
+  const items=(VIEW==='walk'?[]:VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0,W,H);}f.d(t);}}));
   ACTORS.filter(a=>a.scene===VIEW).forEach(a=>items.push({y:a.y,draw:()=>{
     const x=Math.round(a.x),y=Math.round(a.y);
     if(a.kind==='dog'){R(x-7,y-1,14,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-2:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-8,y-17+hop);}
