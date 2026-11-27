@@ -392,7 +392,7 @@ const OUTFIT={
   pj:{h:'#2a201c',s:'#f1caa8',b:'#9e2f2f',p:'#9e2f2f',k:'#f1caa8',long:true,pattern:{b:'#3a2626',p:'#3a2626'}},
   work:{h:'#2a201c',s:'#f1caa8',b:'#8e9099',p:'#27272b',k:'#f2f2f2',long:true},
 };
-function outfitKey(){const h=new Date().getHours()+new Date().getMinutes()/60;return(h>=9&&h<20)?'work':'pj';}
+function outfitKey(){return['work','lunch','walk','overtime'].includes(period())?'work':'pj';}
 byId.me.look=OUTFIT[outfitKey()];
 ACTORS.forEach((a,i)=>Object.assign(a,{scene:'work',x:70+i*18,y:140,zone:'mid',path:[],pose:'stand',frame:0,ft:0,flip:false,actKey:null,until:0,bubble:'',pop:0,popText:'',follow:null,free:false,target:null}));
 
@@ -408,39 +408,49 @@ const SPOT={
   bowl:{x:80,y:192,pose:'sit',z:'mid'},
   ottoman:{x:120,y:86,pose:'sleep',z:'mid'},
   deskFoot:{x:62,y:90,pose:'sleep',z:'mid'},
+  clean1:{x:58,y:154,pose:'stand',z:'mid'},clean2:{x:116,y:118,pose:'stand',z:'mid'},clean3:{x:96,y:140,pose:'stand',z:'mid'},
 };
 function approach(p,z){return z==='top'?{x:p.x,y:98}:null;}
 function goSpot(a,key){const s=SPOT[key],pts=[],ex=approach(a,a.zone),en=approach(s,s.z);if(ex)pts.push(ex);if(en)pts.push(en);pts.push({x:s.x,y:s.y});a.path=pts;a.zone=s.z;a.target=key;}
 function goPoint(a,x,y){const ex=approach(a,a.zone);a.path=(ex?[ex]:[]).concat([{x,y}]);a.zone='mid';a.target=null;}
 
-/* daily rhythm: work 9:00–20:00, lunch 11:30–13:30, sleep 23–7 */
+/* daily rhythm: up 7 · clean 8:00–8:30 · breakfast · work 9–11:30 · lunch, then a walk with the dogs · work 13–18 · dinner · sometimes overtime · sleep 23–7 */
 function hourF(){const d=new Date();return d.getHours()+d.getMinutes()/60;}
+function overtimeDay(){const d=new Date(),n=d.getFullYear()*372+d.getMonth()*31+d.getDate();return((n*2654435761)>>>0)%10<3;} // roughly 3 days in 10
 function period(){const h=hourF();
-  if(h>=23||h<7)return'sleep';if(h<9)return'morning';if(h>=11.5&&h<13.5)return'lunch';if(h<20)return'work';return'evening';}
+  if(h>=23||h<7)return'sleep';if(h<8)return'morning';if(h<8.5)return'clean';if(h<9)return'breakfast';
+  if(h<11.5)return'work';if(h<12+10/60)return'lunch';if(h<13)return'walk';if(h<18)return'work';if(h<19)return'dinner';
+  if(h<21.5&&overtimeDay())return'overtime';return'evening';}
+function schedLoc(){const p=period();return p==='walk'?'out':(p==='breakfast'||p==='lunch'||p==='dinner')?'lounge':null;}
 SPOT.play={x:80,y:142,pose:'stand',z:'mid'};
 const BREAKS=[['rug','쭉쭉 스트레칭',3,[10,14]],['play','제로 콜라랑 놀아주는 중',3,[14,20]],['window','잠깐 창밖 보며 쉬기',1,[8,12]]];
 const PLAN={
   me:()=>{const p=period(),h=hourF();
     if(p==='sleep')return[['beanbag','쿨쿨 zZ',1,[60,90]]];
-    if(p==='morning')return[['rug','모닝 스트레칭',2,[12,18]],['window','창밖 보며 커피 한 잔',2,[15,25]],['play','아침 산책 준비',1,[12,18]],['beanbag','출근 전 여유',1,[20,30]]];
-    if(p==='lunch')return[['play','점심시간! 제로 콜라랑 노는 중',5,[25,40]],['beanbag','점심 먹고 잠깐 쉬는 중',1,[20,30]],['rug','배부르니 스트레칭',1,[10,14]]];
+    if(p==='morning')return[['rug','모닝 스트레칭',2,[12,18]],['window','창밖 보며 잠 깨는 중',2,[15,25]],['play','제로 콜라랑 아침 인사',1,[12,18]],['beanbag','조금만 더 뒹굴',1,[20,30]]];
+    if(p==='clean')return[['clean1','아침 청소 중 · 위잉',3,[25,35]],['clean2','구석구석 청소기',3,[25,35]],['clean3','러그 먼지 털기',2,[20,30]],['window','창문 닦는 중',1,[15,20]]];
+    if(p==='overtime')return[['desk','야근 중… 조금만 더',1,[60,90]]];
     if(p==='evening')return[['beanbag','퇴근! 빈백에서 폰 보는 중',4,[40,60]],['play','제로 콜라랑 노는 중',2,[15,25]],['window','창밖 야경 구경',1,[10,15]]];
     // work: desk, then a short break, then back to the desk
     if(byId.me.actKey!=='desk'){const lbl=h<10?'출근! 오늘 일정 확인':h>=19?'마무리 작업 중':'디자인 작업 중';return[['desk',lbl,1,[50,90]]];}
     return BREAKS;},
   latte:()=>{const p=period();if(p==='sleep')return[['bed1','쿨쿨 zZ',1,[60,90]]];
     if(p==='morning')return[['bowl','아침밥 냠냠',3,[10,14]],['@me','졸졸 따라다니는 중',3,[20,30]]];
+    if(p==='clean')return[['@me','청소기 쫓아다니는 중',4,[20,30]],['bed1','청소기 무서워',1,[15,25]]];
     return[['@me','졸졸 따라다니는 중',3,[20,35]],['bed1','쿨쿨',2,[20,30]],['bowl','냠냠',1,[8,12]],['rugNap','러그에서 뒹굴',1,[15,25]]].concat(byId.me.actKey==='desk'?[['deskFoot','발밑에서 쿨쿨',4,[25,40]]]:[]);},
   choco:()=>{const p=period();if(p==='sleep')return[['bed2','쿨쿨 zZ',1,[60,90]]];
     if(p==='morning')return[['bowl','아침밥 냠냠',3,[10,14]],['ottoman','아직 졸려',2,[20,30]]];
+    if(p==='clean')return[['@me','청소기한테 왈왈',3,[20,30]],['ottoman','청소 끝날 때까지 대피',2,[20,30]]];
     return[['@me','졸졸 따라다니는 중',2,[20,35]],['bed2','쿨쿨',3,[25,40]],['ottoman','오토만 옆에서 쿨쿨',2,[20,30]],['bowl','냠냠',1,[8,12]]];},
 };
 function travel(a,dest){
   if(a.scene===dest)return;
+  if(a.scene==='out'){a.dest=dest;a.path=[];arrive(a);return;}
   a.follow=null;a.actKey=null;a.free=false;a.bubble=dest==='lounge'?'휴게실로 이동 중':'작업방으로 돌아가는 중';
   const d=DOOR[a.scene],ex=approach(a,a.zone);a.path=(ex?[ex]:[]).concat([{x:d.x,y:d.y}]);a.target='__door';a.dest=dest;a.until=Infinity;
 }
 function arrive(a){
+  if(a.dest==='out'){a.scene='out';a.path=[];a.target=null;a.follow=null;a.actKey='walk';a.bubble='산책 중';a.until=Infinity;return;}
   a.scene=a.dest;const d=DOOR[a.scene];a.x=d.x;a.y=d.y;a.zone='mid';a.target=null;a.until=0;
   if(a.id==='me'&&!viewManual)setView(a.scene,false);
 }
@@ -467,8 +477,10 @@ Object.assign(SPOT,{
   l_beg:{x:72,y:146,pose:'sit',z:'mid'},l_beg2:{x:58,y:150,pose:'sit',z:'mid'},
   l_sofaNap:{x:132,y:164,pose:'sleep',z:'mid'},l_play:{x:88,y:164,pose:'stand',z:'mid'},l_rugNap:{x:96,y:172,pose:'sleep',z:'mid'},
 });
+const LPLAN_ME=alone=>alone?[['l_coffee','커피 한 잔 내리는 중',2,[12,18]],['l_sofa1','소파에서 쉬는 중',3,[25,40]],['l_play','제로 콜라랑 노는 중',3,[15,25]],['l_fridge','간식 탐색 중',1,[8,12]]]:[['l_table1','친구랑 수다 중',4,[25,40]],['l_sofa1','소파에서 같이 쉬는 중',3,[25,40]],['l_fridge','간식 꺼내는 중',1,[8,12]],['l_coffee','커피 내리는 중',1,[10,14]],['l_table2','단감 먹는 중',1,[15,20]]];
 const LPLAN={
-  me:()=>(guests.size===0&&!selfG)?[['l_coffee','커피 한 잔 내리는 중',2,[12,18]],['l_sofa1','소파에서 쉬는 중',3,[25,40]],['l_play','제로 콜라랑 노는 중',3,[15,25]],['l_fridge','간식 탐색 중',1,[8,12]]]:[['l_table1','친구랑 수다 중',4,[25,40]],['l_sofa1','소파에서 같이 쉬는 중',3,[25,40]],['l_fridge','간식 꺼내는 중',1,[8,12]],['l_coffee','커피 내리는 중',1,[10,14]],['l_table2','단감 먹는 중',1,[15,20]]],
+  me:()=>{const p=period(),alone=guests.size===0&&!selfG,meal={breakfast:'아침 먹는 중 · 토스트 냠',lunch:'점심 먹는 중',dinner:'퇴근! 저녁 먹는 중'}[p];
+    if(meal&&alone)return[['l_table1',meal,1,[60,90]]];return LPLAN_ME(alone);},
   latte:()=>[['@me','졸졸 따라다니는 중',3,[15,25]],['l_beg','간식 주세요',3,[12,20]],['l_sofaNap','소파에서 쿨쿨',2,[20,30]]],
   choco:()=>[['@me','졸졸 따라다니는 중',2,[15,25]],['l_rugNap','바닥에서 쿨쿨',3,[20,30]],['l_beg2','간식 기다리는 중',2,[12,18]]],
 };
@@ -723,7 +735,7 @@ function poke(a){
 cv.addEventListener('click',e=>{
   const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
   if(VIEW==='lounge'){
-    if(x<=15&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size){LOC_PREF='work';}else setView('work',true);return;}
+    if(x<=15&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='work';}else setView('work',true);return;}
     if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3&&byId.me.scene==='lounge'){act('pat');return;}
     const hitL=ACTORS.find(a=>a.scene==='lounge'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);if(hitL){poke(hitL);return;}
     if(x>=8&&x<=35&&y>=8&&y<=64){act('snack');return;}
@@ -734,7 +746,7 @@ cv.addEventListener('click',e=>{
     if(byId.me.scene==='lounge'){const me=byId.me;goPoint(me,x,y);me.free=true;me.until=performance.now()/1000+15;me.actKey=null;renderCast();}
     return;
   }
-  if(x>=146&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size){LOC_PREF='lounge';prefUntil=period()==='work'?performance.now()/1000+300:Infinity;}else setView('lounge',true);return;}
+  if(x>=146&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='lounge';prefUntil=period()==='work'?performance.now()/1000+300:Infinity;}else setView('lounge',true);return;}
   if(x>=107&&x<=124&&y>=7&&y<=24){openGB();return;}
   if(x>=115&&x<=127&&y>=40&&y<=52){openAlbum();return;}
   if(x>=97&&x<=104&&y>=38&&y<=48){act('cola');return;}
@@ -1206,9 +1218,14 @@ let last=performance.now();
 const workEl=document.getElementById('work');let lastPer=null,lastSec=-1,nextHeart=0;
 function left(d,hh){const m=hh*60-(d.getHours()*60+d.getMinutes());return m>=60?`${Math.floor(m/60)}시간 ${m%60}분`:`${m}분`;}
 function workText(p,d){
-  if(p==='work')return`근무 중 · 퇴근까지 <b>${left(d,20)}</b>`;
-  if(p==='lunch')return`점심시간 · 제로 콜라랑 노는 시간 · 다시 일하기까지 <b>${left(d,13.5)}</b>`;
-  if(p==='morning')return`출근 전 · 출근까지 <b>${left(d,9)}</b>`;
+  if(p==='work')return d.getHours()<12?`근무 중 · 점심까지 <b>${left(d,11.5)}</b>`:`근무 중 · 퇴근까지 <b>${left(d,18)}</b>`;
+  if(p==='lunch')return`점심시간 · 다 먹으면 제로 콜라랑 산책!`;
+  if(p==='walk')return`제로 콜라랑 산책 중 · 돌아오기까지 <b>${left(d,13)}</b>`;
+  if(p==='morning')return`굿모닝 · 8시에 아침 청소`;
+  if(p==='clean')return`아침 청소 중 · 출근까지 <b>${left(d,9)}</b>`;
+  if(p==='breakfast')return`아침 먹는 중 · 출근까지 <b>${left(d,9)}</b>`;
+  if(p==='dinner')return'퇴근! 저녁 먹는 중 · 오늘도 수고했어요';
+  if(p==='overtime')return`오늘은 야근 중… 조금만 더 · <b>${left(d,21.5)}</b> 남음`;
   if(p==='evening')return'퇴근 후 휴식 · 오늘도 수고했어요';
   return'잘 시간 · 내일 9시에 만나요';
 }
@@ -1224,11 +1241,14 @@ function step(now){
   if((byId.me.actKey==='play'||byId.me.actKey==='l_play')&&!byId.me.path.length&&t>nextHeart){nextHeart=t+1.4;
     const dg=Math.random()<.5?byId.latte:byId.choco;heart(dg.x-3,dg.y-22);dg.pop=1.9;dg.popText=Math.random()<.5?'멍!':'왈!';}
   if(LOC_PREF==='lounge'&&t>prefUntil){LOC_PREF='work';byId.me.pop=2.6;byId.me.popText='쉬었으니 다시 일하러!';}
-  const friends=guests.size>0||!!selfG,want=friends?'lounge':LOC_PREF;
-  if(want!==LOC){LOC=want;viewManual=false;ACTORS.forEach(a=>travel(a,LOC));
-    if(!friends)toast(LOC==='lounge'?'휴게실로 쉬러 가요':'작업방으로 돌아가요');}
+  const friends=guests.size>0||!!selfG,sl=schedLoc(),want=friends?'lounge':(sl||LOC_PREF);
+  if(want!==LOC&&!step.placed){LOC=want;ACTORS.forEach(a=>{a.dest=LOC;a.path=[];arrive(a);});}
+  step.placed=true;
+  if(want!==LOC){const from=LOC;LOC=want;viewManual=false;ACTORS.forEach(a=>travel(a,LOC));
+    if(!friends)toast(LOC==='out'?'제로 콜라랑 산책 다녀올게요!':from==='out'?'산책 끝! 다녀왔습니다':LOC==='lounge'?(sl?'밥 먹으러 휴게실로 가요':'휴게실로 쉬러 가요'):'작업방으로 돌아가요');}
   ACTORS.forEach(a=>{
     if(a.pop>0)a.pop-=dt;
+    if(a.scene==='out')return;
     if(a.target==='__door'&&!a.path.length){arrive(a);}
     if(t>a.until&&!a.path.length)nextAct(a,t);
     const speed=a.kind==='dog'?40:30;
@@ -1262,7 +1282,9 @@ function step(now){
     if(a.kind==='dog'){R(x-7,y-1,14,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-2:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-8,y-17+hop);}
     else{const st=a.pose!=='sit'&&a.pose!=='sitback';if(st)R(x-7,y-1,14,2,'rgba(0,0,0,.14)');
       const bob=a.pose==='stretch'&&Math.floor(t*2)%2?-1:0;
-      sprite2('person',a.look,a.pose,a.frame,false,x-8,y-(st?26:22)+bob);}
+      sprite2('person',a.look,a.pose,a.frame,false,x-8,y-(st?26:22)+bob);
+      if(a.id==='me'&&period()==='clean'&&String(a.actKey).startsWith('clean')){const v=Math.floor(t*6)%2;R(x+7,y-14,1,12,'#3e3f3a');R(x+6,y-15,3,2,'#2a2a2a');R(x+5,y-3+v,7,3,'#c0574a');R(x+5,y-3+v,7,1,'#d27766');R(x+4,y,9,1,'#2a2a2a');
+        if(!a.path.length&&Math.random()<.08)fizz.push({x:x+8+Math.random()*6,y:y-1,vy:4+Math.random()*4,life:.6});}}
   }}));
   drawGuests(items,dt);
   items.sort((p,q)=>p.y-q.y).forEach(i=>i.draw());
