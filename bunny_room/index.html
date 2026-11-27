@@ -280,6 +280,13 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   let ready=null,roomNS=null,dbNS=null;
   const err=(code,e)=>({code,message:(e&&e.message)||String(e||code)});
 
+  // the owner key is remembered on this device (here and, via postMessage, by the bunnytori.com page that frames us),
+  // so a home-screen app or a cleared session doesn't ask for it again
+  const KEY_STORE='bunny-owner-key',PARENTS=['http://bunnytori.com','https://bunnytori.com','http://www.bunnytori.com','https://www.bunnytori.com'];
+  function savedKey(){try{return localStorage.getItem(KEY_STORE);}catch(e){return null;}}
+  function rememberKey(k){try{localStorage.setItem(KEY_STORE,k);}catch(e){}
+    if(window.parent!==window)PARENTS.forEach(o=>{try{window.parent.postMessage({type:'bunny-owner',key:k},o);}catch(e){}});}
+  function forgetKey(){try{localStorage.removeItem(KEY_STORE);}catch(e){}}
   function init(){
     if(ready)return ready;
     ready=(async()=>{
@@ -288,9 +295,11 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       let {data:{session}}=await sb.auth.getSession();
       if(!session){const r=await sb.auth.signInAnonymously();if(r.error){console.warn('[bunny] sign-in',r.error.message);return null;}session=r.data.session;}
       const uid=session.user.id;
-      const q=new URLSearchParams(location.search),key=q.get('owner');
-      if(key){try{await sb.rpc('claim_owner',{key});}catch(e){}try{history.replaceState(null,'',location.pathname);}catch(e){}}
+      const q=new URLSearchParams(location.search),urlKey=q.get('owner'),key=urlKey||savedKey();
+      if(urlKey){try{history.replaceState(null,'',location.pathname);}catch(e){}}
       let owner=false;try{const r=await sb.rpc('is_owner');owner=!!r.data;}catch(e){}
+      if(!owner&&key){try{const c=await sb.rpc('claim_owner',{key});owner=!!(c&&c.data===true);}catch(e){}}
+      if(owner&&key)rememberKey(key);else if(!owner&&key&&!urlKey)forgetKey();
       return {sb,uid,owner};
     })().catch(e=>{console.warn('[bunny]',e);return null;});
     return ready;
@@ -336,7 +345,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   }
 
   // lets the owner unlock a device by typing the owner key (home-screen apps keep their own storage)
-  window.bunnyClaimOwner=async key=>{const ctx=await init();if(!ctx)return 'offline';const r=await ctx.sb.rpc('claim_owner',{key});if(r&&r.error){console.warn('[bunny] claim',r.error.message);return 'offline';}return r&&r.data===true;};
+  window.bunnyClaimOwner=async key=>{const ctx=await init();if(!ctx)return 'offline';const r=await ctx.sb.rpc('claim_owner',{key});if(r&&r.error){console.warn('[bunny] claim',r.error.message);return 'offline';}const ok=r&&r.data===true;if(ok)rememberKey(key);return ok;};
   window.claude={use(name){
     if(!['db','user','room'].includes(name))return Promise.resolve(null);
     return init().then(ctx=>{
