@@ -1391,7 +1391,7 @@ WL.addEventListener('click',e=>{if(IS_OWNER===true&&ROLE&&e.target===WL)wlEnter(
 if(window.bunnyClaimOwner){
   // hidden on purpose: tap the dialog title five times quickly to show the key field
   let taps=[];$('join-title').addEventListener('click',()=>{const n=Date.now();taps=taps.filter(x=>n-x<2000);taps.push(n);
-    if(taps.length>=5){taps=[];$('ownerForm').hidden=false;$('o-key').focus();}});
+    if(taps.length>=5){taps=[];if(window.parent!==window){try{window.top.location.href='http://bunnytori.com/bunny_room/login.php';return;}catch(e){}}$('ownerForm').hidden=false;$('o-key').focus();}});
   $('ownerForm').addEventListener('submit',async e=>{e.preventDefault();
     // tolerate pasted spaces/quotes and a keyboard that capitalised the first letter
     const raw=$('o-key').value.replace(/[^A-Za-z0-9_-]/g,'');if(!raw)return;
