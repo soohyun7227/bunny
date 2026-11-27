@@ -113,6 +113,10 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 .bell{font:inherit;font-size:13px;font-weight:700;background:var(--panel);color:var(--fg);border:2px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
 .bell[aria-pressed="true"]{border-color:var(--accent);color:var(--warm)}
 .bell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.walkbtn{position:absolute;left:8px;top:8px;z-index:3;font:inherit;font-size:12px;font-weight:700;padding:6px 10px;background:rgba(255,253,243,.94);color:#1f4a33;border:2px solid #1f4a33;border-radius:999px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.walkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.awaynote{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;background:rgba(255,253,243,.95);color:#26301f;border:2px solid #1f4a33;border-radius:10px;padding:8px 14px;font-size:13px;text-align:center;line-height:1.5;box-shadow:0 3px 0 rgba(0,0,0,.2);white-space:nowrap}
+.awaynote b{color:#1f4a33}
 .cambtn{position:absolute;left:8px;bottom:8px;z-index:3;width:42px;height:38px;display:grid;place-items:center;background:rgba(255,253,243,.94);color:#1f4a33;border:2px solid #1f4a33;border-radius:8px;cursor:pointer;padding:0;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .cambtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .cambtn:active{transform:translateY(1px)}
@@ -150,6 +154,8 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     <canvas id="home" width="160" height="200" aria-label="픽셀 작업방. 내가 책상, 빈백, 러그를 오가고 강아지 두 마리가 따라다닙니다."></canvas>
     <div class="ov" id="ov"></div>
     <div class="flash" id="flash"></div>
+    <button class="walkbtn" id="walkBtn" type="button" hidden></button>
+    <div class="awaynote" id="awayNote" hidden>지금은 제로 콜라랑 <b>산책 중</b>이에요<br>1시에 돌아와요 🐾</div>
     <button class="cambtn" id="camBtn" type="button" aria-label="인증샷 찍기" title="인증샷 찍기"><svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M5 3h6v1h3v1h1v8h-1v1H2v-1H1V5h1V4h3zM7 6v1H6v1H5v3h1v1h1v1h2v-1h1v-1h1V8h-1V7H9V6zM12 5v1h1V5z"/><path fill="currentColor" d="M7 8h2v2H7z"/></svg></button>
   </div>
 
@@ -421,7 +427,7 @@ function period(){const h=hourF();
   if(h>=23||h<7)return'sleep';if(h<8)return'morning';if(h<8.5)return'clean';if(h<9)return'breakfast';
   if(h<11.5)return'work';if(h<12+10/60)return'lunch';if(h<13)return'walk';if(h<18)return'work';if(h<19)return'dinner';
   if(h<21.5&&overtimeDay())return'overtime';return'evening';}
-function schedLoc(){const p=period();return p==='walk'?'out':(p==='breakfast'||p==='lunch'||p==='dinner')?'lounge':null;}
+function schedLoc(){const p=period();return p==='walk'?'walk':(p==='breakfast'||p==='lunch'||p==='dinner')?'lounge':null;}
 SPOT.play={x:80,y:142,pose:'stand',z:'mid'};
 const BREAKS=[['rug','쭉쭉 스트레칭',3,[10,14]],['play','제로 콜라랑 놀아주는 중',3,[14,20]],['window','잠깐 창밖 보며 쉬기',1,[8,12]]];
 const PLAN={
@@ -445,12 +451,13 @@ const PLAN={
 };
 function travel(a,dest){
   if(a.scene===dest)return;
-  if(a.scene==='out'){a.dest=dest;a.path=[];arrive(a);return;}
+  if(a.scene==='walk'){a.dest=dest;a.path=[];arrive(a);return;}
   a.follow=null;a.actKey=null;a.free=false;a.bubble=dest==='lounge'?'휴게실로 이동 중':'작업방으로 돌아가는 중';
   const d=DOOR[a.scene],ex=approach(a,a.zone);a.path=(ex?[ex]:[]).concat([{x:d.x,y:d.y}]);a.target='__door';a.dest=dest;a.until=Infinity;
 }
 function arrive(a){
-  if(a.dest==='out'){a.scene='out';a.path=[];a.target=null;a.follow=null;a.actKey='walk';a.bubble='산책 중';a.until=Infinity;return;}
+  if(a.dest==='walk'){const w=WALKPOS[a.id];Object.assign(a,{scene:'walk',x:w.x,y:w.y,path:[],target:null,follow:null,actKey:'walk',until:Infinity,zone:'mid',bubble:a.id==='me'?'제로 콜라랑 산책 중':'산책 신나'});
+    if(a.id==='me'&&!viewManual)setView('walk',false);renderCast();return;}
   a.scene=a.dest;const d=DOOR[a.scene];a.x=d.x;a.y=d.y;a.zone='mid';a.target=null;a.until=0;
   if(a.id==='me'&&!viewManual)setView(a.scene,false);
 }
@@ -484,7 +491,8 @@ const LPLAN={
   latte:()=>[['@me','졸졸 따라다니는 중',3,[15,25]],['l_beg','간식 주세요',3,[12,20]],['l_sofaNap','소파에서 쿨쿨',2,[20,30]]],
   choco:()=>[['@me','졸졸 따라다니는 중',2,[15,25]],['l_rugNap','바닥에서 쿨쿨',3,[20,30]],['l_beg2','간식 기다리는 중',2,[12,18]]],
 };
-const DOOR={work:{x:146,y:132},lounge:{x:14,y:132}};
+const DOOR={work:{x:146,y:132},lounge:{x:14,y:132},walk:{x:24,y:150}};
+const WALKPOS={me:{x:64,y:150},latte:{x:100,y:146},choco:{x:114,y:164}};
 /* furniture dogs must not stand on: [x1,y1,x2,y2,exit side] */
 const BLOCK={
   lounge:[[38,106,106,138,'down'],[112,84,156,182,'left']],
@@ -734,6 +742,12 @@ function poke(a){
 }
 cv.addEventListener('click',e=>{
   const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
+  if(VIEW==='walk'){
+    if(byId.me.scene==='walk'&&Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
+    const hitW=ACTORS.find(a=>a.scene==='walk'&&a.kind==='dog'&&Math.abs(a.x-x)<12&&y>a.y-20&&y<a.y+4);if(hitW){poke(hitW);return;}
+    if(selfG&&y>=128&&y<=176&&x>=10&&x<=150){selfG.tx=x;selfG.ty=y;sendPos();}
+    return;
+  }
   if(VIEW==='lounge'){
     if(x<=15&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='work';}else setView('work',true);return;}
     if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3&&byId.me.scene==='lounge'){act('pat');return;}
@@ -751,7 +765,7 @@ cv.addEventListener('click',e=>{
   if(x>=115&&x<=127&&y>=40&&y<=52){openAlbum();return;}
   if(x>=97&&x<=104&&y>=38&&y<=48){act('cola');return;}
   if(x>=47&&x<=63&&y>=166&&y<=192){openMail();return;}
-  if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
+  if(byId.me.scene==='work'&&Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
   if(x>=58&&x<=100&&y>=28&&y<=47){act('angry');return;}
   if(x>=10&&x<=56&&y>=82&&y<=122){act('rest');return;}
   if(x>=33&&x<=54&&y>=5&&y<=24){openCal();return;}
@@ -906,6 +920,43 @@ addForm.addEventListener('submit',async e=>{
   }finally{btn.disabled=false;btn.textContent='달력에 붙이기';}
 });
 
+
+/* ---------- walk scene (12:10–13:00): a park path scrolling past ---------- */
+function drawWalk(t){
+  R(0,0,W,H,'#5e3d30');R(3,3,W-6,H-6,'#6b4a3a');R(3,3,W-6,1,'#7d5a48');
+  ctx.save();ctx.beginPath();ctx.rect(6,6,148,188);ctx.clip();
+  const off=(t*16)%240;const wrap=(x,p)=>((x-off)%p+p)%p-20;
+  R(6,6,148,188,'#9cbf6e');
+  for(let i=0;i<60;i++){const x=wrap(i*37%240,240)+6,y=10+(i*53%170);if(y<118||y>176)R(x,y,1,2,'#86ab5a');}
+  // back row: autumn trees (ginkgo yellow + olive)
+  for(let i=0;i<6;i++){const x=wrap(i*40+10,240),y=50+(i%2)*6,yel=i%2===0;
+    R(x+9,y,4,16,'#6b4a3a');R(x+10,y,1,16,'#7d5a48');
+    E(x+11,y-6,13,12,yel?'#c99b36':'#5e7a45');E(x+11,y-7,12,11,yel?'#e2b54a':'#7f9670');E(x+8,y-11,6,5,yel?'#f2d68f':'#a7ad84');
+    if(yel)for(let k=0;k<3;k++){const fy=(t*12+k*23+i*17)%60;R(x+4+k*7+Math.round(Math.sin(t*2+k)*2),y+fy-6,2,1,'#e2b54a');}}
+  // fence
+  for(let x=-((t*16)%12);x<160;x+=12){R(6+x,90,3,16,'#e9d8a6');R(6+x,90,3,1,'#f4eccd');}
+  R(6,94,148,2,'#d6c29b');R(6,101,148,2,'#d6c29b');
+  // flowers between fence and path
+  for(let i=0;i<10;i++){const x=wrap(i*24+5,240),y=110+(i%3)*4;R(x,y,2,2,['#f08a9a','#f4f1e6','#e2b54a'][i%3]);R(x,y+2,1,2,'#5e7a45');}
+  // path with paving lines
+  R(6,124,148,54,'#e3d3a8');R(6,124,148,2,'#cdbb8c');R(6,176,148,2,'#cdbb8c');
+  for(let x=-((t*16)%24);x<160;x+=24){R(6+x,126,1,50,'#d6c29b');}
+  for(let x=-((t*16)%24)+12;x<172;x+=24){R(6+x,150,1,26,'#d6c29b');}
+  R(6,150,148,1,'#d6c29b');
+  // lamp post + bench passing by
+  {const x=wrap(150,240);R(x+3,92,2,32,'#3e3f3a');R(x,88,8,4,'#3e3f3a');R(x+1,92,6,2,'#f2d68f');}
+  {const x=wrap(60,240);R(x,108,22,3,'#8e6450');R(x,104,22,2,'#7a5240');R(x+2,111,2,5,'#5e3d30');R(x+18,111,2,5,'#5e3d30');}
+  // front bushes
+  for(let i=0;i<5;i++){const x=wrap(i*48+20,240);E(x+10,188,14,8,'#5e7a45');E(x+10,187,12,7,'#7f9670');E(x+6,184,5,3,'#a7ad84');}
+  ctx.restore();
+}
+function leashLine(x1,y1,x2,y2){const n=Math.max(Math.abs(x2-x1),Math.abs(y2-y1));for(let i=0;i<=n;i++){const k=i/n,sag=Math.sin(k*Math.PI)*3;R(Math.round(x1+(x2-x1)*k),Math.round(y1+(y2-y1)*k+sag),1,1,'#c0574a');}}
+function drawLeash(){const me=byId.me;if(me.scene!=='walk')return;
+  [['latte',0],['choco',1]].forEach(([id])=>{const d=byId[id];if(d.scene==='walk')leashLine(Math.round(me.x)+7,Math.round(me.y)-11,Math.round(d.x)-3,Math.round(d.y)-9);});}
+function drawAwaySign(){ // little board hung on the door while everyone is out
+  const sx=VIEW==='work'?141:6;R(sx,112,13,9,'#5e3d30');R(sx+1,113,11,7,'#e9d8a6');R(sx+6,108,1,4,'#5e3d30');
+  R(sx+3,115,2,2,'#7a5240');R(sx+7,116,2,2,'#7a5240');R(sx+5,118,3,1,'#7a5240');}
+
 /* ---------- visiting friends (room presence) + guestbook ---------- */
 let IS_OWNER=null,roomNS=null,joined=false,selfG=null;
 const userP=use('user');
@@ -958,7 +1009,7 @@ function drawGuests(items,dt){
   all.forEach(g=>{
     const here=(g.scene||'work')===VIEW;if(g.el)g.el.style.display=here?'':'none';if(!here){g.x=g.tx;g.y=g.ty;return;}
     const dx=g.tx-g.x,dy=g.ty-g.y,dd=Math.hypot(dx,dy);let walking=false;
-    if(dd>.5){const mv=Math.min(dd,30*dt);g.x+=dx/dd*mv;g.y+=dy/dd*mv;walking=true;if(Math.abs(dx)>.5)g.flip=dx>0;g.ft+=dt;if(g.ft>.15){g.ft=0;g.frame=g.frame===1?2:1;}}else g.frame=0;
+    if(dd>.5){const mv=Math.min(dd,30*dt);g.x+=dx/dd*mv;g.y+=dy/dd*mv;walking=true;if(Math.abs(dx)>.5)g.flip=dx>0;g.ft+=dt;if(g.ft>.15){g.ft=0;g.frame=g.frame===1?2:1;}}else if(VIEW==='walk'){walking=true;g.ft+=dt;if(g.ft>.18){g.ft=0;g.frame=g.frame===1?2:1;}}else g.frame=0;
     items.push({y:g.y,draw:()=>{const x=Math.round(g.x),y=Math.round(g.y);R(x-7,y-1,14,2,'rgba(0,0,0,.14)');sprite2('person',guestLook(g.color),'stand',walking?g.frame:0,false,x-8,y-26);}});
     if(g.el){g.el.style.left=g.x/W*100+'%';g.el.style.top=(g.y-27)/H*100+'%';const txt=t<g.sayUntil?g.say:'';if(g.bEl.textContent!==txt)g.bEl.textContent=txt;}
   });
@@ -1188,6 +1239,7 @@ bellBtn.addEventListener('click',()=>{bellOn=!bellOn;try{localStorage.setItem('b
 document.addEventListener('pointerdown',()=>{if(bellOn)unlock();},{once:true});
 bellLabel();
 
+$('walkBtn').addEventListener('click',()=>{setView(VIEW==='walk'?'work':'walk',true);});
 /* night lighting */
 function glow(x,y,r,rgb,a){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
 function lampGlow(t){
@@ -1237,18 +1289,22 @@ function step(now){
   const ok=outfitKey();if(byId.me.look!==OUTFIT[ok]){byId.me.look=OUTFIT[ok];const c=byId.me.avatar;if(c){c.clearRect(0,0,14,14);person(c,3,1,byId.me.look,'stand',0);}
     if(lastSec!==-1){byId.me.pop=2.6;byId.me.popText=ok==='work'?'출근 준비 완료! 후드티 착용':'잠옷으로 갈아입었어요';}}
   if(d.getSeconds()!==lastSec){lastSec=d.getSeconds();workEl.innerHTML=workText(per,d);}
+  {const out=byId.me.scene==='walk',wb=$('walkBtn');wb.hidden=!out;if(out){const tx=VIEW==='walk'?'🏠 빈 집 보기':'🐾 산책 따라가기';if(wb.textContent!==tx)wb.textContent=tx;}
+   $('awayNote').hidden=!(out&&VIEW!=='walk');}
   // playtime: hearts and hops around the dogs
   if((byId.me.actKey==='play'||byId.me.actKey==='l_play')&&!byId.me.path.length&&t>nextHeart){nextHeart=t+1.4;
     const dg=Math.random()<.5?byId.latte:byId.choco;heart(dg.x-3,dg.y-22);dg.pop=1.9;dg.popText=Math.random()<.5?'멍!':'왈!';}
   if(LOC_PREF==='lounge'&&t>prefUntil){LOC_PREF='work';byId.me.pop=2.6;byId.me.popText='쉬었으니 다시 일하러!';}
-  const friends=guests.size>0||!!selfG,sl=schedLoc(),want=friends?'lounge':(sl||LOC_PREF);
+  const friends=guests.size>0||!!selfG,sl=schedLoc(),want=sl==='walk'?'walk':friends?'lounge':(sl||LOC_PREF);
   if(want!==LOC&&!step.placed){LOC=want;ACTORS.forEach(a=>{a.dest=LOC;a.path=[];arrive(a);});}
   step.placed=true;
   if(want!==LOC){const from=LOC;LOC=want;viewManual=false;ACTORS.forEach(a=>travel(a,LOC));
-    if(!friends)toast(LOC==='out'?'제로 콜라랑 산책 다녀올게요!':from==='out'?'산책 끝! 다녀왔습니다':LOC==='lounge'?(sl?'밥 먹으러 휴게실로 가요':'휴게실로 쉬러 가요'):'작업방으로 돌아가요');}
+    if(!friends)toast(LOC==='walk'?'제로 콜라랑 산책 다녀올게요!':from==='walk'?'산책 끝! 다녀왔습니다':LOC==='lounge'?(sl?'밥 먹으러 휴게실로 가요':'휴게실로 쉬러 가요'):'작업방으로 돌아가요');}
   ACTORS.forEach(a=>{
     if(a.pop>0)a.pop-=dt;
-    if(a.scene==='out')return;
+    if(a.scene==='walk'){a.ft+=dt;if(a.ft>(a.kind==='dog'?.13:.18)){a.ft=0;a.frame=a.frame===1?2:1;}
+      const w=WALKPOS[a.id],ph={me:0,latte:1.7,choco:3.1}[a.id];a.x=w.x+Math.sin(t*.7+ph)*(a.kind==='dog'?4:1.5);a.y=w.y+Math.sin(t*.5+ph*2)*(a.kind==='dog'?2:.5);
+      a.pose=a.kind==='dog'?'walk':'stand';a.flip=true;return;}
     if(a.target==='__door'&&!a.path.length){arrive(a);}
     if(t>a.until&&!a.path.length)nextAct(a,t);
     const speed=a.kind==='dog'?40:30;
@@ -1272,11 +1328,11 @@ function step(now){
     a.pose=a.kind==='dog'?'walk':'stand';a.ft+=dt;if(a.ft>.15){a.ft=0;a.frame=a.frame===1?2:1;}
     if(!a.path.length){a.frame=0;const s=a.target&&SPOT[a.target];a.pose=s?s.pose:(a.kind==='dog'?'sit':'stand');}
   });
-  if(VIEW==='work')drawRoom(t);else drawLounge(t);
+  if(VIEW==='walk')drawWalk(t);else if(VIEW==='work')drawRoom(t);else drawLounge(t);
   if(VIEW==='work')softShadows();
   if(VIEW==='lounge')loungeShadows();
-  (VIEW==='work'?SHADOWS:LSHADOWS).forEach(([x,y,w])=>{R(x,y,w,3,'rgba(70,50,25,.16)');R(x+2,y+3,w-4,1,'rgba(70,50,25,.1)');});
-  const items=(VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0);}f.d(t);}}));
+  (VIEW==='walk'?[]:VIEW==='work'?SHADOWS:LSHADOWS).forEach(([x,y,w])=>{R(x,y,w,3,'rgba(70,50,25,.16)');R(x+2,y+3,w-4,1,'rgba(70,50,25,.1)');});
+  const items=(VIEW==='walk'?[]:VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0);}f.d(t);}}));
   ACTORS.filter(a=>a.scene===VIEW).forEach(a=>items.push({y:a.y,draw:()=>{
     const x=Math.round(a.x),y=Math.round(a.y);
     if(a.kind==='dog'){R(x-7,y-1,14,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-2:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-8,y-17+hop);}
@@ -1288,6 +1344,8 @@ function step(now){
   }}));
   drawGuests(items,dt);
   items.sort((p,q)=>p.y-q.y).forEach(i=>i.draw());
+  if(VIEW==='walk')drawLeash();
+  else if(byId.me.scene==='walk')drawAwaySign();
   lighting(t);
   drawFizz(dt);drawAngry(t);
   drawHearts(dt);
