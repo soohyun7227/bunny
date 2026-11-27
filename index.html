@@ -579,7 +579,7 @@ function travel(a,dest){
 function arrive(a){
   if(a.dest==='walk'){const w=WALKPOS[a.id];Object.assign(a,{scene:'walk',x:w.x,y:w.y,path:[],target:null,follow:null,actKey:'walk',until:Infinity,zone:'mid',bubble:a.id==='me'?'제로 콜라랑 산책 중':'산책 신나'});
     if(a.id==='me'&&!viewManual)setView('walk',false);renderCast();return;}
-  const from=a.from||a.scene;a.scene=a.dest;const d=doorOf(a.scene,from);a.x=d.x;a.y=d.y;a.zone='mid';a.target=null;a.until=0;
+  const from=a.from||a.scene;a.scene=a.dest;const d=doorOf(a.scene,from);a.x=d.x;a.y=d.y;if(typeof MANUAL!=='undefined'&&manualOn()&&a===ctrlActor())a.bubble='';a.zone='mid';a.target=null;a.until=0;
   if(a.id==='me'&&!viewManual)setView(a.scene,false);
 }
 function setView(v,manual){
@@ -905,16 +905,28 @@ function poke(a){
   if(a.kind==='dog'){heart(a.x-5,a.y-20);heart(a.x+2,a.y-24);a.pop=2.2;a.popText='멍!';if(roomNS&&joined)roomNS.presence({pet:{d:a.id,at:Date.now()}}).catch(()=>{});}
   else{const L=a.id==='oppa'?OPPA_LINES:LINES;a.pop=2.6;a.popText=L[Math.floor(Math.random()*L.length)];heart(a.x-2,a.y-30);}
 }
+/* the logged-in owner steers their own character (bunny or tori); the daily routine waits until 5 quiet minutes have passed */
+let MANUAL=null;const MANUAL_SEC=300;
+function ctrlActor(){return IS_OWNER===true?(ROLE==='oppa'?byId.oppa:byId.me):null;}
+function manualOn(){return!!MANUAL&&performance.now()/1000<MANUAL.until;}
+function takeControl(){MANUAL=Object.assign(MANUAL||{},{until:performance.now()/1000+MANUAL_SEC});
+  if(!takeControl.told){takeControl.told=true;toast('지금은 직접 움직여요 · 5분 동안 그대로 두면 다시 일과대로 움직여요');}}
+function ownerDoor(to){const c=ctrlActor();if(!c)return false;takeControl();MANUAL.scene=to;setView(to,true);return true;}
+function ownerFloor(x,y){const c=ctrlActor();if(!c)return false;takeControl();MANUAL.scene=VIEW;
+  if(c.scene!==VIEW)return true;   // walks in through the door first
+  const t=performance.now()/1000;goPoint(c,x,y);c.free=true;c.bubble='';c.until=Infinity;c.actKey=null;
+  ['latte','choco'].forEach(id=>{const d=byId[id];if(d.scene===c.scene&&Math.random()<.75){d.follow=c.id;d.actKey='@'+c.id;d.bubble='졸졸 따라다니는 중';d.until=t+15;d.path=[];d.zone='mid';d.target=null;}});
+  renderCast();return true;}
 cv.addEventListener('click',e=>{
   const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
-  if(VIEW==='court'||VIEW==='string'){const o=byId.oppa;if(o.scene===VIEW&&Math.abs(o.x-x)<12&&y>o.y-26&&y<o.y+4)poke(o);return;}
+  if(VIEW==='court'||VIEW==='string'){const o=byId.oppa;if(o.scene===VIEW&&Math.abs(o.x-x)<12&&y>o.y-26&&y<o.y+4){poke(o);return;}if(y>=64&&y<=190&&x>=14&&x<=146)ownerFloor(x,y);return;}
   if(VIEW==='bed'){
-    if(x>=141&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='work';}else setView('work',true);return;}
+    if(x>=141&&y>=104&&y<=154){if(!ownerDoor('work'))setView('work',true);return;}
     const me=byId.me;if(me.scene==='bed'&&Math.abs(me.x-x)<11&&y>me.y-(me.pose==='bed'?14:26)&&y<me.y+4){act('pat');return;}
     const hitB=ACTORS.find(a=>a.scene==='bed'&&a.kind==='dog'&&Math.abs(a.x-x)<12&&y>a.y-20&&y<a.y+4);if(hitB){poke(hitB);return;}
     if(x>=20&&x<=46&&y>=42&&y<=66){bedLamp=!bedLamp;return;}
     if(IS_OWNER===false&&selfG&&y>=100&&y<=190&&x>=14&&x<=146){selfG.tx=x;selfG.ty=y;sendPos();return;}
-    if(IS_OWNER!==false&&me.scene==='bed'&&me.zone!=='bed'&&y>=100&&y<=190){goPoint(me,x,y);me.free=true;me.until=performance.now()/1000+15;me.actKey=null;renderCast();}
+    if(y>=100&&y<=190&&x>=14&&x<=146)ownerFloor(x,y);
     return;
   }
   if(VIEW==='walk'){
@@ -924,7 +936,7 @@ cv.addEventListener('click',e=>{
     return;
   }
   if(VIEW==='lounge'){
-    if(x<=15&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='work';}else setView('work',true);return;}
+    if(x<=15&&y>=104&&y<=154){if(!ownerDoor('work'))setView('work',true);return;}
     if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3&&byId.me.scene==='lounge'){act('pat');return;}
     const hitL=ACTORS.find(a=>a.scene==='lounge'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);if(hitL){poke(hitL);return;}
     if(x>=8&&x<=35&&y>=8&&y<=64){if(IS_OWNER===true)openCouple('note');else act('snack');return;}
@@ -932,11 +944,11 @@ cv.addEventListener('click',e=>{
     if(x>=116&&x<=154&&y>=86&&y<=178){act('sofa');return;}
     if(y<68||x<14||x>150||y>192)return;
     if(IS_OWNER===false){if(selfG){selfG.tx=x;selfG.ty=y;sendPos();}return;}
-    if(byId.me.scene==='lounge'){const me=byId.me;goPoint(me,x,y);me.free=true;me.until=performance.now()/1000+15;me.actKey=null;renderCast();}
+    if(!ownerFloor(x,y)&&IS_OWNER!==true&&byId.me.scene==='lounge'){const me=byId.me;goPoint(me,x,y);me.free=true;me.until=performance.now()/1000+15;me.actKey=null;renderCast();}
     return;
   }
-  if(x<=15&&y>=124&&y<=172){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='bed';prefUntil=period()==='work'?performance.now()/1000+300:Infinity;}else setView('bed',true);return;}
-  if(x>=146&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size&&!schedLoc()){LOC_PREF='lounge';prefUntil=period()==='work'?performance.now()/1000+300:Infinity;}else setView('lounge',true);return;}
+  if(x<=15&&y>=124&&y<=172){if(!ownerDoor('bed'))setView('bed',true);return;}
+  if(x>=146&&y>=104&&y<=154){if(!ownerDoor('lounge'))setView('lounge',true);return;}
   if(x>=107&&x<=124&&y>=7&&y<=24){openGB();return;}
   if(x>=115&&x<=127&&y>=40&&y<=52){openAlbum();return;}
   if(x>=97&&x<=104&&y>=38&&y<=48){act('cola');return;}
@@ -947,9 +959,10 @@ cv.addEventListener('click',e=>{
   if(x>=33&&x<=54&&y>=5&&y<=24){openCal();return;}
   const hit=ACTORS.find(a=>a.scene==='work'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);
   if(hit){poke(hit);return;}
-  if(byId.me.scene!=='work'&&IS_OWNER!==false)return;
   if(y<88||x<10||x>146||y>192)return;
   if(IS_OWNER===false){if(selfG){selfG.tx=x;selfG.ty=y;sendPos();}return;}
+  if(ownerFloor(x,y))return;
+  if(byId.me.scene!=='work')return;
   const t=performance.now()/1000,me=byId.me;
   goPoint(me,x,y);me.free=true;me.bubble='';me.until=t+15;me.actKey=null;
   ['latte','choco'].forEach(id=>{const d=byId[id];if(Math.random()<.75){d.follow='me';d.actKey='@me';d.bubble='졸졸 따라다니는 중';d.until=t+15;d.path=[];d.zone='mid';d.target=null;}});
@@ -1794,12 +1807,14 @@ function step(now){
   if((byId.me.actKey==='play'||byId.me.actKey==='l_play')&&!byId.me.path.length&&t>nextHeart){nextHeart=t+1.4;
     const dg=Math.random()<.5?byId.latte:byId.choco;heart(dg.x-3,dg.y-22);dg.pop=1.9;dg.popText=Math.random()<.5?'멍!':'왈!';}
   if(LOC_PREF!=='work'&&t>prefUntil){LOC_PREF='work';byId.me.pop=2.6;byId.me.popText='쉬었으니 다시 일하러!';}
-  const friends=guests.size>0||!!selfG,sl=schedLoc(),want=(sl==='walk'||sl==='bed')?sl:friends?'lounge':(sl||LOC_PREF);
+  if(MANUAL&&!manualOn()){const c=ctrlActor();MANUAL=null;if(c){c.until=0;c.free=false;}}
+  const mine=manualOn()&&MANUAL.scene&&ctrlActor()===byId.me?MANUAL.scene:null;
+  const friends=guests.size>0||!!selfG,sl=schedLoc(),want=mine||((sl==='walk'||sl==='bed')?sl:friends?'lounge':(sl||LOC_PREF));
   if(want!==LOC&&!step.placed){LOC=want;ACTORS.forEach(a=>{if(a.id==='oppa')return;a.from=a.scene;a.dest=LOC;a.path=[];arrive(a);});}
   step.placed=true;
   if(want!==LOC){const from=LOC;LOC=want;viewManual=false;ACTORS.forEach(a=>{if(a.id!=='oppa')travel(a,LOC);});
     if(!friends)toast(LOC==='walk'?'제로 콜라랑 산책 다녀올게요!':from==='walk'?'산책 끝! 다녀왔습니다':LOC==='bed'?(sl?'잘 시간! 셋이 침실로 가요 zZ':'침실로 가요'):from==='bed'&&per==='morning'?'굿모닝! 일어났어요':LOC==='lounge'?(sl?'밥 먹으러 휴게실로 가요':'휴게실로 쉬러 가요'):'작업방으로 돌아가요');}
-  {const op=byId.oppa,ow=oppaLoc()||(LOC==='walk'?'work':LOC);
+  {const op=byId.oppa,ow=(manualOn()&&MANUAL.scene&&ctrlActor()===op)?MANUAL.scene:(oppaLoc()||(LOC==='walk'?'work':LOC));
    if(!step.oppaPlaced){step.oppaPlaced=true;op.goal=ow;op.from=op.scene;op.dest=ow;op.path=[];arrive(op);}
    else if(op.goal!==ow){op.goal=ow;if(op.scene!==ow)travel(op,ow);else op.until=0;}
    const oo=OPPA[oppaOutfit()];if(op.look!==oo)op.look=oo;}
@@ -1809,7 +1824,7 @@ function step(now){
       const w=WALKPOS[a.id],ph={me:0,latte:1.7,choco:3.1}[a.id];a.x=w.x+Math.sin(t*.7+ph)*(a.kind==='dog'?4:1.5);a.y=w.y+Math.sin(t*.5+ph*2)*(a.kind==='dog'?2:.5);
       a.pose=a.kind==='dog'?'walk':'stand';a.flip=true;return;}
     if(a.target==='__door'&&!a.path.length){arrive(a);}
-    if(t>a.until&&!a.path.length)nextAct(a,t);
+    if(t>a.until&&!a.path.length&&!(manualOn()&&a===ctrlActor()))nextAct(a,t);
     const speed=a.kind==='dog'?40:30;
     if(a.follow){
       const o=byId[a.follow],off=a.id==='latte'?{x:-16,y:6}:{x:16,y:8};
