@@ -113,6 +113,24 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 .bell{font:inherit;font-size:13px;font-weight:700;background:var(--panel);color:var(--fg);border:2px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
 .bell[aria-pressed="true"]{border-color:var(--accent);color:var(--warm)}
 .bell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cambtn{position:absolute;left:8px;bottom:8px;z-index:3;width:42px;height:38px;display:grid;place-items:center;background:rgba(255,253,243,.94);color:#1f4a33;border:2px solid #1f4a33;border-radius:8px;cursor:pointer;padding:0;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.cambtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cambtn:active{transform:translateY(1px)}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.flash.go{animation:flash .55s ease-out}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+.pola{margin:0;background:#fffdf6;padding:6px 6px 8px;border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,.18);border:1px solid #ece5cf}
+.pola img{display:block;width:100%;aspect-ratio:4/5;image-rendering:pixelated;border-radius:2px;background:#d6c29b}
+.pola figcaption{font-size:12px;margin-top:6px;color:#3a3a30;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pola figcaption b{font-size:11px;color:#fff;padding:1px 6px;border-radius:4px}
+.pola figcaption time{color:#8b8a7a;font-size:11px}
+.shotPrev{max-width:230px;margin:4px auto 0;transform:rotate(-1.5deg)}
+.shot-acts{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.shot-acts .ib{text-decoration:none;display:inline-flex;align-items:center}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px 12px;margin-top:6px;padding:4px}
+.album .pola{cursor:pointer;transform:rotate(-1.2deg)}
+.album .pola:nth-child(even){transform:rotate(1.4deg)}
+@media (prefers-reduced-motion:reduce){.flash.go{animation:none}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--deep);color:#fff;font-weight:700;padding:10px 16px;border-radius:999px;border:2px solid var(--accent);z-index:30;font-size:13px}
 </style>
 
@@ -131,6 +149,8 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   <div class="stage">
     <canvas id="home" width="160" height="200" aria-label="픽셀 작업방. 내가 책상, 빈백, 러그를 오가고 강아지 두 마리가 따라다닙니다."></canvas>
     <div class="ov" id="ov"></div>
+    <div class="flash" id="flash"></div>
+    <button class="cambtn" id="camBtn" type="button" aria-label="인증샷 찍기" title="인증샷 찍기"><svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M5 3h6v1h3v1h1v8h-1v1H2v-1H1V5h1V4h3zM7 6v1H6v1H5v3h1v1h1v1h2v-1h1v-1h1V8h-1V7H9V6zM12 5v1h1V5z"/><path fill="currentColor" d="M7 8h2v2H7z"/></svg></button>
   </div>
 
   <div class="cast" id="cast" hidden></div>
@@ -147,7 +167,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   </div>
 
   <div class="row">
-    <p class="hint">방명록·우체통을 눌러 보세요. 친구가 오면 딩동!<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
+    <p class="hint">방명록·우체통·책장 액자를 눌러 보세요. 왼쪽 아래 카메라로 인증샷도 찰칵!<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
   </div>
 </div>
 
@@ -190,6 +210,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gb-title">
     <div class="sh-head">
       <h2 id="gb-title">방명록</h2>
+      <button class="ib" id="gb-album" type="button">인증샷 앨범</button>
       <button class="ib" id="gb-close" type="button">닫기</button>
     </div>
     <form class="add" id="gbForm">
@@ -198,6 +219,29 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     </form>
     <p class="empty" id="gbNote" hidden></p>
     <div class="gb" id="gbList"></div>
+  </div>
+</div>
+<div class="scrim" id="shotScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shot-title">
+    <div class="sh-head">
+      <h2 id="shot-title">찰칵! 인증샷</h2>
+      <button class="ib" id="shot-close" type="button">닫기</button>
+    </div>
+    <figure class="pola shotPrev"><img id="shotImg" alt=""><figcaption id="shotCap"></figcaption></figure>
+    <div class="shot-acts">
+      <button class="ib go" id="shot-hang" type="button">액자 앨범에 걸기</button>
+      <a class="ib" id="shot-save" href="#" download="bunnys-office.png">내 폰에 저장</a>
+    </div>
+    <p class="empty" id="shotNote" hidden></p>
+  </div>
+</div>
+<div class="scrim" id="albumScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="album-title">
+    <div class="sh-head">
+      <h2 id="album-title">인증샷 앨범</h2>
+      <button class="ib" id="album-close" type="button">닫기</button>
+    </div>
+    <div class="album" id="albumList"></div>
   </div>
 </div>
 <div class="scrim" id="mailScrim" hidden>
@@ -687,6 +731,7 @@ cv.addEventListener('click',e=>{
   }
   if(x>=146&&y>=104&&y<=154){if(IS_OWNER!==false&&!guests.size){LOC_PREF='lounge';prefUntil=period()==='work'?performance.now()/1000+300:Infinity;}else setView('lounge',true);return;}
   if(x>=107&&x<=124&&y>=7&&y<=24){openGB();return;}
+  if(x>=115&&x<=127&&y>=40&&y<=52){openAlbum();return;}
   if(x>=97&&x<=104&&y>=38&&y<=48){act('cola');return;}
   if(x>=47&&x<=63&&y>=166&&y<=192){openMail();return;}
   if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
@@ -941,13 +986,14 @@ if(window.bunnyClaimOwner){
 
 /* guestbook: one card per visitor (their last five notes), readable by everyone */
 const gbScrim=$('gbScrim'),gbList=$('gbList'),gbNote=$('gbNote');
-let gbEntries=[],gbCanWrite=null,gbDB=null;
+let gbEntries=[],gbShots=[],gbCanWrite=null,gbDB=null;const SHOT_MAX=160000;
 (async()=>{
   gbDB=await use('db');const u=await userP;
   if(u)gbCanWrite=await u.can('data.write').catch(()=>null);
   if(!gbDB)return;
-  gbDB.collection('guestbook').onSnapshot(sn=>{gbEntries=[];sn.docs.forEach(d=>{const v=d.data()||{};(Array.isArray(v.notes)?v.notes:[]).forEach(n=>gbEntries.push({nick:String(v.nick||'친구').slice(0,10),color:SHIRTS.includes(v.color)?v.color:'#8f9d3e',text:String(n.text||'').slice(0,100),at:+n.at||0}));});
-    gbEntries.sort((a,b)=>b.at-a.at);renderGB();},()=>{});
+  gbDB.collection('guestbook').onSnapshot(sn=>{gbEntries=[];gbShots=[];sn.docs.forEach(d=>{const v=d.data()||{},nick=String(v.nick||'친구').slice(0,10),color=SHIRTS.includes(v.color)||v.color==='#1f4a33'?v.color:'#8f9d3e';(Array.isArray(v.notes)?v.notes:[]).forEach(n=>gbEntries.push({nick,color,text:String(n.text||'').slice(0,100),at:+n.at||0}));
+      (Array.isArray(v.shots)?v.shots:[]).forEach(sh=>{if(sh&&typeof sh.img==='string'&&sh.img.startsWith('data:image/png;base64,')&&sh.img.length<SHOT_MAX)gbShots.push({nick,color,img:sh.img,at:+sh.at||0});});});
+    gbEntries.sort((a,b)=>b.at-a.at);gbShots.sort((a,b)=>b.at-a.at);renderGB();renderAlbum();},()=>{});
 })();
 function renderGB(){
   if(gbScrim.hidden)return;
@@ -971,11 +1017,61 @@ $('gbForm').addEventListener('submit',async e=>{
   const nick=IS_OWNER?'방 주인':(selfG?selfG.nick:'친구'),color=IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1]);
   const btn=$('gb-save');btn.disabled=true;
   try{const ref=gbDB.collection('guestbook').doc(uid);const snap=await ref.get();const old=snap.exists&&Array.isArray((snap.data()||{}).notes)?snap.data().notes:[];
-    await ref.set({nick,color,notes:old.concat([{text,at:Date.now()}]).slice(-5),updatedAt:Date.now()});
+    const oldShots=snap.exists&&Array.isArray((snap.data()||{}).shots)?snap.data().shots:[];
+    await ref.set({nick,color,notes:old.concat([{text,at:Date.now()}]).slice(-5),shots:oldShots,updatedAt:Date.now()});
     $('gb-text').value='';toast('방명록을 남겼어요!');heart(byId.latte.x,byId.latte.y-22);}
   catch(err){if(err&&err.code==='invalid_argument'){gbCanWrite=false;renderGB();}else toast('방명록을 저장하지 못했어요. 잠시 후 다시 해 주세요');}
   finally{btn.disabled=false;}
 });
+
+
+/* ---------- 인증샷: snap the room and hang it in the photo album ---------- */
+const shotScrim=$('shotScrim'),albumScrim=$('albumScrim');let lastShot=null;
+function whoNow(){return{nick:IS_OWNER?'방 주인':(selfG?selfG.nick:'친구'),color:IS_OWNER?'#1f4a33':(selfG?selfG.color:SHIRTS[1])};}
+function fmtShot(at){const d=new Date(at);return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function capFill(cap,nick,color,at){cap.innerHTML='';const b=document.createElement('b');b.textContent=nick;b.style.background=color;const tm=document.createElement('time');tm.textContent=fmtShot(at);cap.append(b,tm);}
+function openShot(sh,fresh){
+  lastShot=fresh?sh:null;$('shotImg').src=sh.img;$('shotImg').alt=`${sh.nick}의 Bunny's Office 인증샷`;
+  capFill($('shotCap'),sh.nick,sh.color,sh.at);
+  $('shot-title').textContent=fresh?'찰칵! 인증샷':`${sh.nick}의 인증샷`;
+  const sv=$('shot-save');sv.href=sh.img;const d=new Date(sh.at);sv.download=`bunnys-office-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.png`;
+  const cant=!gbDB||gbCanWrite===false;$('shot-hang').hidden=!fresh||cant;
+  const note=$('shotNote');note.hidden=!(fresh&&cant);if(fresh&&cant)note.textContent='이 화면에서는 앨범에 걸 수 없어요. 폰에 저장은 할 수 있어요.';
+  shotScrim.hidden=false;$(fresh&&!cant?'shot-hang':'shot-close').focus();
+}
+$('camBtn').addEventListener('click',()=>{
+  const f=$('flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
+  if(bellOn){unlock();if(actx&&actx.state==='running'){tone(2100,0,.05,.18);tone(1300,.06,.09,.16);}}
+  let img;try{img=cv.toDataURL('image/png');}catch{toast('사진을 찍지 못했어요');return;}
+  const {nick,color}=whoNow(),me=byId.me;
+  me.pop=2.2;me.popText='찰칵! 브이~';['latte','choco'].forEach(id=>{const d=byId[id];d.pop=1.8;d.popText='멍!';});
+  setTimeout(()=>openShot({img,nick,color,at:Date.now()},true),420);
+});
+$('shot-hang').addEventListener('click',async()=>{
+  if(!lastShot||!gbDB)return;const btn=$('shot-hang');
+  const u=await userP;const uid=u&&await u.id().catch(()=>null);if(!uid){toast('로그인한 상태에서만 걸 수 있어요');return;}
+  if(lastShot.img.length>=SHOT_MAX){toast('사진이 너무 커서 걸 수 없어요');return;}
+  btn.disabled=true;
+  try{const ref=gbDB.collection('guestbook').doc(uid);const snap=await ref.get();const od=snap.exists?(snap.data()||{}):{};const {nick,color}=whoNow();
+    const shots=(Array.isArray(od.shots)?od.shots:[]).concat([{img:lastShot.img,at:lastShot.at}]).slice(-3);
+    await ref.set({nick,color,notes:Array.isArray(od.notes)?od.notes:[],shots,updatedAt:Date.now()});
+    shotScrim.hidden=true;toast('인증샷을 액자 앨범에 걸었어요!');heart(byId.me.x,byId.me.y-30);openAlbum();}
+  catch(err){if(err&&err.code==='invalid_argument'){gbCanWrite=false;}toast('앨범에 걸지 못했어요. 폰에 저장해 두세요');}
+  finally{btn.disabled=false;}
+});
+function renderAlbum(){
+  if(albumScrim.hidden)return;const L=$('albumList');L.innerHTML='';
+  if(!gbShots.length){const p=document.createElement('p');p.className='empty';p.textContent=gbDB?'아직 걸린 인증샷이 없어요. 방 왼쪽 아래 카메라로 첫 장을 찍어 볼까요?':'이 화면에서는 앨범을 볼 수 없어요.';L.appendChild(p);return;}
+  gbShots.slice(0,40).forEach(sh=>{const f=document.createElement('figure');f.className='pola';f.tabIndex=0;f.setAttribute('role','button');
+    const im=document.createElement('img');im.src=sh.img;im.alt=`${sh.nick}의 인증샷`;im.loading='lazy';const cap=document.createElement('figcaption');capFill(cap,sh.nick,sh.color,sh.at);
+    f.append(im,cap);const go=()=>{albumScrim.hidden=true;openShot(sh,false);};f.onclick=go;f.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};L.appendChild(f);});
+}
+function openAlbum(){albumScrim.hidden=false;$('album-close').focus();renderAlbum();}
+$('gb-album').onclick=()=>{closeGB();openAlbum();};
+$('album-close').onclick=()=>{albumScrim.hidden=true;};
+$('shot-close').onclick=()=>{shotScrim.hidden=true;};
+[shotScrim,albumScrim].forEach(sc=>sc.addEventListener('click',e=>{if(e.target===sc)sc.hidden=true;}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){shotScrim.hidden=true;albumScrim.hidden=true;}});
 
 /* ---------- shared interactions with "나" ---------- */
 const fizz=[];
