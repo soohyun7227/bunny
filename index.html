@@ -343,6 +343,11 @@ const LPLAN={
   choco:()=>[['@me','졸졸 따라다니는 중',2,[15,25]],['l_rugNap','바닥에서 쿨쿨',3,[20,30]],['l_beg2','간식 기다리는 중',2,[12,18]]],
 };
 const DOOR={work:{x:146,y:132},lounge:{x:14,y:132}};
+/* furniture dogs must not stand on: [x1,y1,x2,y2,exit side] */
+const BLOCK={
+  lounge:[[38,106,106,138,'down'],[112,84,156,182,'left']],
+  work:[[52,40,108,94,'down'],[12,88,48,116,'down']],
+};
 let VIEW='work',LOC='work',viewManual=false,treeFlash=0,LOC_PREF='work',prefUntil=0;
 function drawLounge(t){
   const night=isNight();
@@ -1003,7 +1008,11 @@ function step(now){
     if(a.follow){
       const o=byId[a.follow],off=a.id==='latte'?{x:-16,y:6}:{x:16,y:8};
       if(o.scene!==a.scene){a.follow=null;a.until=0;return;}
-      const tx=Math.max(14,Math.min(146,o.x+off.x)),ty=Math.max(a.scene==='lounge'?70:90,Math.min(190,o.y+off.y)),dx=tx-a.x,dy=ty-a.y,dd=Math.hypot(dx,dy);
+      let tx=Math.max(14,Math.min(146,o.x+off.x)),ty=Math.max(a.scene==='lounge'?70:90,Math.min(190,o.y+off.y));
+      // dogs wait on the floor in front of furniture instead of climbing onto it
+      const blk=(BLOCK[a.scene]||[]).find(b=>tx>b[0]&&tx<b[2]&&ty>b[1]&&ty<b[3]);
+      if(blk){if(blk[4]==='left'){tx=blk[0]-10+(a.id==='latte'?0:-6);ty=a.id==='latte'?152:170;}else ty=blk[3]+(a.id==='latte'?8:12);}
+      const dx=tx-a.x,dy=ty-a.y,dd=Math.hypot(dx,dy);
       if(dd>3){const mv=Math.min(dd,(speed+(dd>30?24:0))*dt);a.x+=dx/dd*mv;a.y+=dy/dd*mv;if(Math.abs(dx)>.5)a.flip=dx>0;a.pose='walk';a.ft+=dt;if(a.ft>.14){a.ft=0;a.frame=a.frame===1?2:1;}}
       else a.pose='sit';
       return;
