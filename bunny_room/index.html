@@ -104,6 +104,8 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 .chat form{display:flex;gap:6px}
 .chat input{flex:1;min-width:0;font:inherit;font-size:16px;padding:7px 9px;border-radius:6px;border:2px solid var(--line);background:#1f2b23;color:var(--fg)}
 .chat button{font:inherit;font-size:13px;font-weight:700;background:var(--accent);color:#2a1d05;border:0;border-radius:6px;padding:0 14px;cursor:pointer}
+.bellicon[aria-pressed="false"]{color:var(--muted)}
+.bellicon[aria-pressed="true"] .slash{display:none}
 .iconbtn{width:40px;height:36px;display:grid;place-items:center;background:var(--panel);color:var(--warm);border:2px solid var(--line);border-radius:6px;cursor:pointer;padding:0}
 .iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .iconbtn.spin svg{animation:spin .8s linear infinite}
@@ -123,7 +125,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       <h1>스튜디오 오피스</h1>
       <div class="work" id="work"></div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center"><button class="iconbtn" id="reloadBtn" type="button" aria-label="화면 새로고침" title="새로고침"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 2h4v1h1v1h1V2h1v5H9V6h2V5h-1V4H7v1H6v1H5v4h1v1h1v1h3v-1h1v-1h1V9h2v2h-1v1h-1v1h-1v1H6v-1H5v-1H4v-1H3V6h1V5h1V4h1V3h1z"/></svg></button><span class="clock" id="clock">--:--</span></div>
+    <div style="display:flex;gap:6px;align-items:center"><button class="iconbtn bellicon" id="bellBtn" type="button" aria-pressed="false" aria-label="벨소리 꺼짐" title="벨소리 꺼짐"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 1h2v1h1v1h1v1h1v5h1v1h1v2H2v-2h1V9h1V4h1V3h1V2h1zM6 13h4v1H9v1H7v-1H6z"/><path class="slash" fill="currentColor" d="M2 1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1H9V9H8V8H7V7H6V6H5V5H4V4H3V3H2z"/></svg></button><button class="iconbtn" id="reloadBtn" type="button" aria-label="화면 새로고침" title="새로고침"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M7 2h4v1h1v1h1V2h1v5H9V6h2V5h-1V4H7v1H6v1H5v4h1v1h1v1h3v-1h1v-1h1V9h2v2h-1v1h-1v1h-1v1H6v-1H5v-1H4v-1H3V6h1V5h1V4h1V3h1z"/></svg></button><span class="clock" id="clock">--:--</span></div>
   </header>
 
   <div class="stage">
@@ -131,7 +133,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     <div class="ov" id="ov"></div>
   </div>
 
-  <div class="cast" id="cast"></div>
+  <div class="cast" id="cast" hidden></div>
   <div class="here" id="here" hidden></div>
   <div class="emotes" id="emotes" hidden>
     <button type="button" data-say="안녕!">안녕!</button>
@@ -146,7 +148,6 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 
   <div class="row">
     <p class="hint">방명록·우체통을 눌러 보세요. 친구가 오면 딩동!<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
-    <button class="bell" id="bellBtn" type="button" aria-pressed="false">벨소리 꺼짐</button>
   </div>
 </div>
 
@@ -325,17 +326,17 @@ function person(c,ox,oy,L,pose,frame,k=1){
     if(L.pattern&&L.pattern[ch]&&((x+y)%2===0))col=L.pattern[ch];
     Rc(c,ox+x*k,oy+y*k,k,k,col);}});
 }
-const D_STAND=[".lll.........","lhhhl.....ll.","hhhhdd...lhhl","hehhddllllhh.","nhbhddhhhhhh.",".hhhddhhhhhh.","..hhhhhhhhhh.","...dhddhhdhd."];
-const D_LEGS=["...hd....hd..","....hd..hd...","...hd.....hd."];
-const D_SLEEP=["....lllll....","..llhhhhhhl..",".lhhhhhhhhhh.","hhddhhhhhhhhl","heehddhhhhhhh","nhbhddhhhhhd.",".dddddddddd.."];
+const D_STAND=[".ll........","lhhl....ll.","hhhdd..lhhl","hehddlllhh.","nbhddhhhhh.",".hhhhhhhhh.","..dhddhdhd."];
+const D_LEGS=["..hd...hd..","...hd..hd..","..hd....hd."];
+const D_SLEEP=["...lllll...",".llhhhhhl..","hhddhhhhhhl","heedhhhhhhh","nbhddhhhhd.",".ddddddddd."];
 function dog(c,ox,oy,L,pose,frame,flip,k=1){
   const rows=pose==='sleep'?D_SLEEP:D_STAND.concat([D_LEGS[pose==='walk'?frame:0]]);
-  rows.forEach((r,y)=>{for(let x=0;x<13;x++){const ch=r[x];if(ch==='.')continue;
+  rows.forEach((r,y)=>{for(let x=0;x<11;x++){const ch=r[x];if(ch==='.')continue;
     let col={h:L.h,l:L.l,d:L.d,e:L.eye,n:'#1a1210',b:'#e99a8c'}[ch];
     if(ch==='h'&&(x*3+y*5)%7===0)col=L.d;
     if(ch==='h'&&(x*5+y*3)%11===0)col=L.l;
-    Rc(c,ox+(flip?12-x:x)*k,oy+y*k,k,k,col);}});
-  if(pose!=='sleep'){const ex=flip?ox+10*k:ox+1*k;Rc(c,ex,oy+3*k,1,1,'#ffffff');}
+    Rc(c,ox+(flip?10-x:x)*k,oy+y*k,k,k,col);}});
+  if(pose!=='sleep'){const ex=flip?ox+9*k:ox+1*k;Rc(c,ex,oy+3*k,1,1,'#ffffff');}
 }
 
 /* ---------- cast ---------- */
@@ -356,7 +357,7 @@ ACTORS.forEach((a,i)=>Object.assign(a,{scene:'work',x:70+i*18,y:140,zone:'mid',p
 
 const SPOT={
   desk:{x:80,y:80,pose:'sitback',z:'top'},
-  beanbag:{x:30,y:107,pose:'sit',z:'mid'},
+  beanbag:{x:30,y:110,pose:'sit',z:'mid'},
   window:{x:100,y:96,pose:'standback',z:'mid'},
   rug:{x:80,y:132,pose:'stretch',z:'mid'},
   tree:{x:24,y:90,pose:'standback',z:'mid'},
@@ -434,7 +435,7 @@ const DOOR={work:{x:146,y:132},lounge:{x:14,y:132}};
 /* furniture dogs must not stand on: [x1,y1,x2,y2,exit side] */
 const BLOCK={
   lounge:[[38,106,106,138,'down'],[112,84,156,182,'left']],
-  work:[[52,40,108,94,'down'],[12,88,48,116,'down']],
+  work:[[52,40,108,94,'down'],[10,82,56,122,'down']],
 };
 let VIEW='work',LOC='work',viewManual=false,treeFlash=0,LOC_PREF='work',prefUntil=0;
 function drawLounge(t){
@@ -449,7 +450,10 @@ function drawLounge(t){
   R(6,61,148,133,P.floor);for(let y=61;y<194;y+=8){R(6,y,148,1,P.plank);for(let x=6+((y-61)/8%2)*18;x<154;x+=36){R(x,y,1,8,P.plank);R(x+9,y+3,5,1,'#d0bb92');}}
   R(6,61,120,22,'#e9e5dc');for(let y=61;y<83;y+=7)for(let x=6;x<126;x+=7)if(((x+y)/7|0)%2)R(x,y,7,Math.min(7,83-y),'#e1dcd1');R(6,83,120,1,'#cfc8b8');
   // door back to the work room (left wall)
-  R(6,104,4,50,'#5e3d30');R(8,106,6,46,'#8e6450');R(9,108,4,42,'#7a5240');R(9,110,4,1,'#8e6450');R(9,130,4,1,'#8e6450');R(11,127,2,2,'#e2b54a');R(6,154,16,2,'#b98d63');
+  R(6,104,8,50,'#5e3d30');R(6,106,6,46,'#e9e2c4');R(6,108,5,42,'#f4efd9');
+  ctx.fillStyle='rgba(255,240,200,.22)';for(let y=108;y<156;y+=2){const k=(y-108)*.45;ctx.fillRect(13,y,Math.round(6+k),2);}
+  R(14,104,5,52,'#8e6450');R(15,106,3,48,'#7a5240');R(16,128,2,2,'#e2b54a');R(14,104,5,1,'#a07258');
+  R(6,154,22,2,'#b98d63');
   // striped rug in front of the sofa
   R(66,140,46,38,'#cfc4a0');R(67,141,44,36,'#ded4b2');for(let y=144;y<176;y+=6)R(67,y,44,2,'#cfc4a0');R(67,158,44,2,'#a7ad84');
   for(let y=141;y<177;y+=3){R(64,y,2,1,'#e9e2c8');R(112,y,2,1,'#e9e2c8');}
@@ -528,7 +532,10 @@ function drawRoom(t){
   for(let k=0;k<36;k++){const a=k/36*Math.PI*2;R(80+Math.cos(a)*40,129+Math.sin(a)*18,1,1,'#c6caa4');}
   for(let k=0;k<28;k++){const a=k/28*Math.PI*2;R(80+Math.cos(a)*47,130+Math.sin(a)*23,1,2,'#cfd3b0');}
   // door to the lounge (right wall)
-  R(150,104,4,50,'#5e3d30');R(146,106,6,46,'#8e6450');R(147,108,4,42,'#7a5240');R(147,110,4,1,'#8e6450');R(147,130,4,1,'#8e6450');R(147,127,2,2,'#e2b54a');R(138,154,16,2,'#b98d63');
+  R(146,104,8,50,'#5e3d30');R(148,106,6,46,'#f6d78f');R(149,108,5,42,'#fbe6b0');
+  ctx.fillStyle='rgba(255,226,150,.28)';for(let y=108;y<156;y+=2){const k=(y-108)*.45;ctx.fillRect(Math.round(147-k),y,Math.round(6+k),2);}
+  R(141,104,5,52,'#8e6450');R(142,106,3,48,'#7a5240');R(142,128,2,2,'#e2b54a');R(141,104,5,1,'#a07258');
+  R(132,154,22,2,'#b98d63');
   drawOutlined('props',decorProps,t);
   ctx.restore();
 }
@@ -600,7 +607,7 @@ const FURN=[
     R(30,58,8,7,P.yel);R(33,58,2,7,'#c0574a');R(30,61,8,1,'#c0574a');R(5+28,56,2,2,'#c0574a');
     R(12,62,7,6,'#a7ad84');R(15,62,1,6,'#f4f1e6');R(12,64,7,1,'#f4f1e6');
     ctx.restore();}},
-  {y:98,d(){ctx.save();ctx.translate(-12,44);E(44,58,15,11,P.yelD);E(44,55,15,11,P.yel);E(41,49,10,5,P.yelL);R(36,46,6,1,'#f4d98a');R(34,59,10,1,P.yelD);R(48,62,7,1,P.yelD);R(52,52,4,1,P.yelD);E(50,57,4,3,P.cush);E(50,56,3,2,P.cushL);ctx.restore();}}, // big beanbag
+  {y:98,d(){ctx.save();ctx.translate(-12,44);E(44,60,21,15,P.yelD);E(44,56,21,15,P.yel);E(40,47,14,7,P.yelL);R(32,43,9,1,'#f4d98a');R(29,61,14,1,P.yelD);R(50,66,10,1,P.yelD);R(57,52,6,1,P.yelD);R(26,52,5,1,P.yelD);E(55,58,6,5,P.cush);E(55,57,5,4,P.cushL);ctx.restore();}}, // big beanbag
   {y:64,d(){ctx.save();ctx.translate(0,0);R(110,54,12,10,P.pot);R(110,62,12,2,P.potD);R(111,55,10,1,'#f2f4ec');R(115,30,2,24,'#8e7a52');R(113,40,2,8,'#8e7a52');R(118,36,2,10,'#8e7a52');
     [[108,28,P.leaf],[114,24,P.leafL],[120,28,P.leaf],[106,36,P.leafL],[122,34,P.leafD],[110,42,P.leafD],[120,44,P.leafL],[116,32,P.leafD]].forEach(([x,y,c])=>{R(x,y,6,3,c);R(x+1,y-1,4,1,c);R(x+1,y+3,4,1,c);});ctx.restore();}}, // tall plant (right of the desk)
   {y:64,d(){ // desk with monitors, lamp, mug, notebook
@@ -628,12 +635,12 @@ const FURN=[
   {y:190,d(){R(50,170,10,9,'#b55a46');R(50,170,10,2,'#c46b56');R(52,174,6,1,'#7d3a2d');R(54,179,2,11,P.woodD);R(59,170,2,5,P.yel);R(59,170,3,2,P.yel);R(51,176,2,2,'#f4f1e6');}}, // mailbox with flag
 ];
 const SHADOWS=[];
-function softShadows(){ctx.fillStyle=P.shadow;[[32,112,15,3],[116,66,8,2],[80,71,26,3],[80,86,8,2],[139,67,14,2],[21,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
+function softShadows(){ctx.fillStyle=P.shadow;[[32,120,21,3],[116,66,8,2],[80,71,26,3],[80,86,8,2],[139,67,14,2],[21,67,12,2],[28,180,17,3],[130,184,17,3]].forEach(([x,y,rx,ry])=>{for(let k=-ry;k<=ry;k++){const w=Math.round(rx*Math.sqrt(1-(k/(ry+.5))**2));ctx.fillRect(x-w,y+k,w*2,1);}});}
 /* overlay tags */
 ACTORS.forEach(a=>{const d=document.createElement('div');d.className='tag'+(a.kind==='dog'?' dog':'');d.innerHTML='<div class="bubble"></div><div class="name"></div>';d.querySelector('.name').textContent=a.name;ov.appendChild(d);a.el=d;a.bEl=d.querySelector('.bubble');});
 
 const doorTag=document.createElement('div');doorTag.className='name';doorTag.style.cssText='position:absolute;transform:translate(-50%,-50%);pointer-events:none;background:rgba(31,74,51,.9)';ov.appendChild(doorTag);
-function placeDoorTag(){if(VIEW==='work'){doorTag.textContent='휴게실 →';doorTag.style.left=(140/W*100)+'%';}else{doorTag.textContent='← 작업방';doorTag.style.left=(22/W*100)+'%';}doorTag.style.top=(104/H*100)+'%';}
+function placeDoorTag(){doorTag.style.display='none';return;if(VIEW==='work'){doorTag.textContent='휴게실 →';doorTag.style.left=(140/W*100)+'%';}else{doorTag.textContent='← 작업방';doorTag.style.left=(22/W*100)+'%';}doorTag.style.top=(104/H*100)+'%';}
 /* cast cards */
 const castEl=document.getElementById('cast');
 ACTORS.forEach(a=>{
@@ -676,7 +683,7 @@ cv.addEventListener('click',e=>{
   if(x>=47&&x<=63&&y>=166&&y<=192){openMail();return;}
   if(Math.abs(byId.me.x-x)<11&&y>byId.me.y-26&&y<byId.me.y+3){act('pat');return;}
   if(x>=58&&x<=100&&y>=28&&y<=47){act('angry');return;}
-  if(x>=14&&x<=50&&y>=86&&y<=116){act('rest');return;}
+  if(x>=10&&x<=56&&y>=82&&y<=122){act('rest');return;}
   if(x>=33&&x<=54&&y>=8&&y<=30){openCal();return;}
   const hit=ACTORS.find(a=>a.scene==='work'&&Math.abs(a.x-x)<12&&y>a.y-26&&y<a.y+4);
   if(hit){poke(hit);return;}
@@ -1041,7 +1048,7 @@ $('reloadBtn').addEventListener('click',()=>{
 let actx=null,bellOn=false,titleTimer=null;const baseTitle=document.title;
 try{bellOn=localStorage.getItem('bell')==='on';}catch{}
 const bellBtn=$('bellBtn');
-function bellLabel(){bellBtn.setAttribute('aria-pressed',String(bellOn));bellBtn.textContent=bellOn?'벨소리 켜짐':'벨소리 꺼짐';}
+function bellLabel(){const t=bellOn?'벨소리 켜짐':'벨소리 꺼짐';bellBtn.setAttribute('aria-pressed',String(bellOn));bellBtn.setAttribute('aria-label',t);bellBtn.title=t;}
 function unlock(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch{actx=null;}}
 function tone(f,start,len,vol){const o=actx.createOscillator(),o2=actx.createOscillator(),g=actx.createGain();
   o.type='sine';o.frequency.value=f;o2.type='triangle';o2.frequency.value=f*2;
@@ -1135,7 +1142,7 @@ function step(now){
   const items=(VIEW==='work'?FURN:LFURN).map((f,i)=>({y:f.y,draw:()=>{{const k=(VIEW==='work'?'f':'l')+i;if(!OL[k])OL[k]=outlineOf(f.d,W,H);ctx.drawImage(OL[k],0,0);}f.d(t);}}));
   ACTORS.filter(a=>a.scene===VIEW).forEach(a=>items.push({y:a.y,draw:()=>{
     const x=Math.round(a.x),y=Math.round(a.y);
-    if(a.kind==='dog'){R(x-11,y-1,22,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-3:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-13,y-(a.pose==='sleep'?14:18)+hop);}
+    if(a.kind==='dog'){R(x-9,y-1,18,2,'rgba(0,0,0,.13)');const hop=(a.pop>1.6)?-3:0;sprite2('dog',a.look,a.pose,a.frame,a.flip,x-11,y-(a.pose==='sleep'?12:16)+hop);}
     else{const st=a.pose!=='sit'&&a.pose!=='sitback';if(st)R(x-7,y-1,14,2,'rgba(0,0,0,.14)');
       const bob=a.pose==='stretch'&&Math.floor(t*2)%2?-1:0;
       sprite2('person',a.look,a.pose,a.frame,false,x-8,y-(st?26:22)+bob);}
@@ -1147,7 +1154,7 @@ function step(now){
   drawHearts(dt);
   ACTORS.forEach(a=>{
     a.el.style.display=a.scene===VIEW?'':'none';
-    const top=a.kind==='dog'?(a.pose==='sleep'?15:19):(a.pose==='sit'||a.pose==='sitback'?23:a.pose==='stretch'?29:27);
+    const top=a.kind==='dog'?(a.pose==='sleep'?13:17):(a.pose==='sit'||a.pose==='sitback'?23:a.pose==='stretch'?29:27);
     a.el.style.left=a.x/W*100+'%';a.el.style.top=(a.y-top)/H*100+'%';
     const moving=a.kind==='dog'?a.pose==='walk':a.path.length>0;
     const txt=a.pop>0?a.popText:(a.id==='me'&&!moving?a.bubble:'');
