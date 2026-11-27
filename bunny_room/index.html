@@ -183,7 +183,6 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       <label for="o-key">방 주인 열쇠<input id="o-key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="열쇠를 붙여 넣으세요"></label>
       <button class="ib" type="submit">주인으로 들어가기</button>
     </form>
-    <button class="ib" id="ownerBtn" type="button" hidden style="align-self:flex-start;margin-top:6px">방 주인이에요</button>
   </div>
 </div>
 <div class="scrim" id="gbScrim" hidden>
@@ -912,8 +911,9 @@ $('joinForm').addEventListener('submit',e=>{
 
 /* website only: the owner can unlock this device with the owner key */
 if(window.bunnyClaimOwner){
-  $('ownerBtn').hidden=false;
-  $('ownerBtn').onclick=()=>{$('ownerForm').hidden=false;$('ownerBtn').hidden=true;$('o-key').focus();};
+  // hidden on purpose: tap the dialog title five times quickly to show the key field
+  let taps=[];$('join-title').addEventListener('click',()=>{const n=Date.now();taps=taps.filter(x=>n-x<2000);taps.push(n);
+    if(taps.length>=5){taps=[];$('ownerForm').hidden=false;$('o-key').focus();}});
   $('ownerForm').addEventListener('submit',async e=>{e.preventDefault();
     // tolerate pasted spaces/quotes and a keyboard that capitalised the first letter
     const raw=$('o-key').value.replace(/[^A-Za-z0-9_-]/g,'');if(!raw)return;
