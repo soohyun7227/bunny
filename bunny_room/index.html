@@ -979,7 +979,11 @@ function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTime
 (async()=>{
   const [db,user]=await Promise.all([use('db'),use('user')]);
   const uid=user&&await user.id().catch(()=>null);
-  if(db&&uid){
+  if(db&&window.bunnyClaimOwner&&await ownerP){
+    const ref=db.collection('couple').doc('cal-checks');
+    checkStore={set:(k,v)=>{const keys=Object.assign({},checks);if(v)keys[k]=true;else delete keys[k];return ref.set({keys,at:Date.now()});}};
+    db.collection('couple').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='cal-checks');const keys=d&&d.data()&&d.data().keys;checks=keys&&typeof keys==='object'?Object.assign({},keys):{};renderCal();},()=>{});
+  }else if(db&&uid){
     const col=db.collection(`data/users/${uid}/checks`);
     checkStore={set:(k,v)=>v?col.doc(k).set({done:true,at:Date.now()}):col.doc(k).delete()};
     col.onSnapshot(s=>{checks={};s.docs.forEach(d=>{checks[d.id]=true;});renderCal();},()=>{});
@@ -998,8 +1002,22 @@ function norm(e,ci){
 function payloadOf(r){let p=r&&r.payload;if(typeof p==='string'){try{p=JSON.parse(p);}catch{p=null;}}return p||{};}
 function listArgs(c){const [s,e]=calRange();
   const a={startTime:iso(s),endTime:iso(e),orderBy:'startTime',pageSize:250};if(c.id)a.calendarId=c.id;return a;}
-async function loadEvents(){
+const FRAMED=window.parent!==window;let calReq=0;
+function parentCal(fresh){return new Promise((res,rej)=>{const req=++calReq,[s0,e0]=calRange();
+  const on=e=>{if(!/^https?:\/\/(www\.)?bunnytori\.com$/.test(e.origin)||!e.data||e.data.type!=='bunny-cal-res'||e.data.req!==req)return;removeEventListener('message',on);clearTimeout(tm);res(e.data.data||{});};
+  addEventListener('message',on);const tm=setTimeout(()=>{removeEventListener('message',on);rej({code:'no_bridge'});},12000);
+  window.parent.postMessage({type:'bunny-cal',req,from:ymd(s0),to:ymd(e0),fresh:!!fresh},'*');});}
+async function loadEvents(fresh){
   const mcp=await mcpP;
+  if(!mcp&&FRAMED){
+    cal.state='loading';cal.err=null;renderCal();
+    try{const d=await parentCal(fresh===true);if(!d.ok)throw{code:d.error||'fetch'};
+      CALS.length=0;(d.calendars||[]).forEach(c=>CALS.push({id:null,name:String(c.name||'캘린더').slice(0,12),color:c.color||'#c9a21f',add:c.add||''}));
+      $('f-cal').innerHTML='';CALS.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;$('f-cal').appendChild(o);});
+      cal.events=(d.events||[]).map(e=>norm(e,Math.min(CALS.length-1,+e.ci||0))).filter(e=>e.start);cal.state='ok';cal.loaded=true;cal.partial=d.failed?{code:'partial'}:null;}
+    catch(e){cal.state='error';cal.err=e;}
+    renderCal();return;
+  }
   if(!mcp){cal.state='nomcp';renderCal();return;}
   cal.state='loading';cal.err=null;renderCal();
   const out=[];let firstErr=null;
@@ -1012,7 +1030,8 @@ async function loadEvents(){
 }
 function errText(e){
   const c=e&&e.code;
-  return({needs_reauth:'구글 캘린더 연결이 만료됐어요. claude.ai 설정 → 커넥터에서 다시 연결해 주세요.',
+  return({no_bridge:'달력 연결 파일이 아직 없어요. 카페24에 새 index.html을 올려 주세요.',no_file:'카페24에 calendar.php가 아직 없어요.',auth:'로그인이 필요해요. 로그인 페이지에서 다시 로그인해 주세요.',config:'calendar_config.php에 캘린더 주소를 아직 넣지 않았어요.',fetch:'구글 캘린더를 불러오지 못했어요. 잠시 후 새로고침해 주세요.',
+    needs_reauth:'구글 캘린더 연결이 만료됐어요. claude.ai 설정 → 커넥터에서 다시 연결해 주세요.',
     server_not_connected:'이 계정에 구글 캘린더 커넥터가 없어요. claude.ai 설정 → 커넥터에서 추가해 주세요.',
     selection_required:'구글 캘린더 연결이 여러 개예요. 화면 위 안내에서 하나를 골라 주세요.',
     not_in_manifest:'이 방이 달력을 보도록 아직 허용되지 않았어요.',approval_required:'이 방이 달력을 보도록 허용이 필요해요.',
@@ -1094,7 +1113,7 @@ function updateBadge(){
 }
 async function openCal(){
   if(!(await ownerP)){toast('달력은 방 주인만 볼 수 있어요');return;}
-  if(!(await mcpP)){openCouple('ev');return;}
+  if(!(await mcpP)&&!FRAMED){openCouple('ev');return;}
   scrim.hidden=false;$('sh-close').focus();
   const me=byId.me;me.pop=2.4;me.popText='일정 확인!';
   if(!cal.loaded&&cal.state!=='loading')loadEvents();else renderCal();
@@ -1103,14 +1122,21 @@ function closeCal(){scrim.hidden=true;addForm.hidden=true;cv.focus();}
 $('sh-close').onclick=closeCal;
 scrim.addEventListener('click',e=>{if(e.target===scrim)closeCal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!scrim.hidden)closeCal();});
-$('sh-reload').onclick=loadEvents;
+$('sh-reload').onclick=()=>loadEvents(true);
 document.querySelectorAll('#calTabs [data-ctab]').forEach(b=>b.onclick=()=>{calTab=b.dataset.ctab;renderCal();});
 $('sh-add').onclick=()=>{addForm.hidden=!addForm.hidden;if(!addForm.hidden){if(!$('f-date').value)$('f-date').value=ymd(new Date());$('f-title').focus();}};
 addForm.addEventListener('submit',async e=>{
   e.preventDefault();
-  const mcp=await mcpP;if(!mcp){toast('이 화면에서는 일정을 추가할 수 없어요');return;}
-  const title=$('f-title').value.trim(),date=$('f-date').value,time=$('f-time').value,c=CALS[+$('f-cal').value];
+  const mcp=await mcpP;
+  const title=$('f-title').value.trim(),date=$('f-date').value,time=$('f-time').value,c=CALS[+$('f-cal').value]||CALS[0];
   if(!title||!date)return;
+  if(!mcp){
+    const d0=date.replace(/-/g,'');let dates;
+    if(time){const s0=new Date(`${date}T${time}:00`),e0=new Date(s0.getTime()+36e5),f=d=>ymd(d).replace(/-/g,'')+'T'+pad(d.getHours())+pad(d.getMinutes())+'00';dates=f(s0)+'/'+f(e0);}
+    else{const n=new Date(`${date}T00:00:00`);n.setDate(n.getDate()+1);dates=d0+'/'+ymd(n).replace(/-/g,'');}
+    const u='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+dates+'&ctz=Asia/Seoul'+(c&&c.add?'&src='+encodeURIComponent(c.add):'');
+    window.open(u,'_blank','noopener');addForm.reset();addForm.hidden=true;toast('구글 캘린더에서 저장하면 잠시 뒤 방에도 떠요');return;
+  }
   let args;
   if(time){const s=new Date(`${date}T${time}:00`),en=new Date(s.getTime()+36e5);args={summary:title,startTime:iso(s),endTime:iso(en)};}
   else{const n=new Date(`${date}T00:00:00`);n.setDate(n.getDate()+1);args={summary:title,allDay:true,startTime:`${date}T00:00:00`,endTime:iso(n)};}
