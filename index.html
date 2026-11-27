@@ -145,7 +145,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   </div>
 
   <div class="row">
-    <p class="hint">바닥을 누르면 걸어가고, 제로 콜라를 누르면 하트가 나와요.<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
+    <p class="hint">방명록·우체통을 눌러 보세요. 친구가 오면 딩동!<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
     <button class="bell" id="bellBtn" type="button" aria-pressed="false">벨소리 꺼짐</button>
   </div>
 </div>
@@ -211,6 +211,88 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+<script>
+/* bunny room · website bridge
+   On bunnytori.com the room has no claude.ai runtime, so this file provides the same
+   claude.use('room' | 'db' | 'user') calls backed by Supabase. Swapping to a PHP backend
+   later only means replacing this file. */
+(function(){
+  const SB_URL='https://gneqywcxluptahlikvnp.supabase.co';
+  const SB_KEY='sb_publishable_Ep9ziHfJZkGJ7s7LVGgGwQ_9lfZ3A3m';
+  let ready=null,roomNS=null,dbNS=null;
+  const err=(code,e)=>({code,message:(e&&e.message)||String(e||code)});
+
+  function init(){
+    if(ready)return ready;
+    ready=(async()=>{
+      if(!window.supabase)return null;
+      const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'bunny-room-auth'}});
+      let {data:{session}}=await sb.auth.getSession();
+      if(!session){const r=await sb.auth.signInAnonymously();if(r.error){console.warn('[bunny] sign-in',r.error.message);return null;}session=r.data.session;}
+      const uid=session.user.id;
+      const q=new URLSearchParams(location.search),key=q.get('owner');
+      if(key){try{await sb.rpc('claim_owner',{key});}catch(e){}try{history.replaceState(null,'',location.pathname);}catch(e){}}
+      let owner=false;try{const r=await sb.rpc('is_owner');owner=!!r.data;}catch(e){}
+      return {sb,uid,owner};
+    })().catch(e=>{console.warn('[bunny]',e);return null;});
+    return ready;
+  }
+
+  function makeDB(ctx){
+    const sb=ctx.sb;
+    const snap=rows=>{const docs=rows.map(r=>({id:r.id,exists:true,data:()=>r.data,metadata:{fromCache:false,hasPendingWrites:false}}));return{docs,size:docs.length,empty:!docs.length,docChanges:()=>[],metadata:{fromCache:false,hasPendingWrites:false}};};
+    function collection(col){
+      return{
+        doc(id){return{
+          async get(){const{data,error}=await sb.from('docs').select('id,data').eq('col',col).eq('id',id).maybeSingle();if(error)throw err('invalid_argument',error);return{id,exists:!!data,data:()=>data?data.data:undefined,metadata:{}};},
+          async set(obj){const{error}=await sb.from('docs').upsert({col,id,data:obj,updated_at:new Date().toISOString()});if(error)throw err('invalid_argument',error);},
+          async update(obj){const cur=await this.get();await this.set(Object.assign({},cur.data()||{},obj));},
+          async delete(){const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw err('invalid_argument',error);},
+        };},
+        onSnapshot(next,onErr){
+          let alive=true;
+          const load=async()=>{const{data,error}=await sb.from('docs').select('id,data').eq('col',col).order('updated_at',{ascending:false}).limit(200);if(!alive)return;if(error){onErr&&onErr(err('unavailable',error));return;}next(snap(data||[]));};
+          load();
+          const ch=sb.channel('docs:'+col+':'+Math.random().toString(36).slice(2,8)).on('postgres_changes',{event:'*',schema:'public',table:'docs',filter:'col=eq.'+col},()=>load()).subscribe();
+          return()=>{alive=false;sb.removeChannel(ch);};
+        },
+      };
+    }
+    return{collection,doc(path){const i=path.lastIndexOf('/');return collection(path.slice(0,i)).doc(path.slice(i+1));}};
+  }
+
+  function makeRoom(ctx){
+    const sb=ctx.sb,subs=[];let state={},live=false,t=null;
+    const ch=sb.channel('bunny-room',{config:{presence:{key:ctx.uid}}});
+    const peers=()=>{const st=ch.presenceState();return Object.keys(st).map(k=>{const metas=st[k]||[];const m=Object.assign({},metas[metas.length-1]||{});delete m.presence_ref;
+      return{peer:k,by:null,isMe:k===ctx.uid,sameTab:k===ctx.uid,kind:'viewer',guest:false,presence:m,at:Date.now()};});};
+    const fire=()=>{const list=peers();subs.forEach(f=>{try{f({peers:list,joined:[],left:[],updated:[]});}catch(e){console.error(e);}});};
+    ch.on('presence',{event:'sync'},fire);
+    ch.subscribe(async s=>{if(s==='SUBSCRIBED'){live=true;await ch.track(state);fire();}});
+    const push=()=>{if(!live)return;clearTimeout(t);t=setTimeout(()=>ch.track(state),60);};
+    return{
+      presence(patch){for(const k in patch){if(patch[k]===null)delete state[k];else state[k]=patch[k];}push();return Promise.resolve();},
+      onPeers(fn){subs.push(fn);if(live)setTimeout(()=>fn({peers:peers(),joined:[],left:[],updated:[]}),0);return()=>{const i=subs.indexOf(fn);if(i>=0)subs.splice(i,1);};},
+      peers,emit:async()=>{},on:()=>()=>{},
+    };
+  }
+
+  window.claude={use(name){
+    if(!['db','user','room'].includes(name))return Promise.resolve(null);
+    return init().then(ctx=>{
+      if(name==='user'){
+        if(!ctx)return{isOwner:async()=>true,id:async()=>'local',can:async()=>false};
+        return{isOwner:async()=>ctx.owner,id:async()=>ctx.uid,can:async()=>true,me:async()=>({id:ctx.uid,name:''})};
+      }
+      if(!ctx)return null;
+      if(name==='db')return dbNS||(dbNS=makeDB(ctx));
+      return roomNS||(roomNS=makeRoom(ctx));
+    });
+  }};
+})();
+
+</script>
 <script>
 (()=>{
 const W=160,H=200;
