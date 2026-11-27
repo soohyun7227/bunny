@@ -147,11 +147,6 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   <div class="row">
     <p class="hint">바닥을 누르면 걸어가고, 제로 콜라를 누르면 하트가 나와요.<br>나를 누르면 쓰담, 제로콜라 캔은 한 모금, 빈백은 휴식, 컴퓨터는… 화내요. 오른쪽 문은 휴게실이에요.</p>
     <button class="bell" id="bellBtn" type="button" aria-pressed="false">벨소리 꺼짐</button>
-    <div class="seg" role="group" aria-label="낮과 밤">
-      <button id="m-auto" data-m="auto" aria-pressed="true">자동</button>
-      <button id="m-day" data-m="day" aria-pressed="false">낮</button>
-      <button id="m-night" data-m="night" aria-pressed="false">밤</button>
-    </div>
   </div>
 </div>
 
@@ -226,7 +221,7 @@ function R(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w
 function B(x,y,w,h,c){R(x,y,w,h,O);R(x+1,y+1,w-2,h-2,c);} // outlined box
 function Rc(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
 let mode='auto';
-function isNight(){if(mode==='day')return false;if(mode==='night')return true;const h=new Date().getHours();return h>=19||h<7;}
+function isNight(){return new Date().getHours()<6;}
 
 /* ---------- sprites ---------- */
 const P_FRONT=["..hhhh..",".hhhhhh.","hhhhhhhh","hhsssshh","LsessesL","LcsmmscL","L.ssss.L","LbbbbbbL","sbbbbbbs","sbbbbbbs",".pppppp."];
@@ -580,8 +575,7 @@ cv.addEventListener('click',e=>{
   ['latte','choco'].forEach(id=>{const d=byId[id];if(Math.random()<.75){d.follow='me';d.actKey='@me';d.bubble='졸졸 따라다니는 중';d.until=t+15;d.path=[];d.zone='mid';d.target=null;}});
   renderCast();
 });
-document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;
-  document.querySelectorAll('.seg button').forEach(o=>o.setAttribute('aria-pressed',String(o===b)));ACTORS.forEach(a=>{if(!a.path.length)a.until=0;});}));
+
 
 /* ---------- calendar (Google Calendar via connector) ---------- */
 const CAL_SERVER='Google Calendar';
