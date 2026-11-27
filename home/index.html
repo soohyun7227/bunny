@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>bunnytori</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.min.css">
+<style>
+  html,body{height:100%;margin:0}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#1b2230;color:#f6ecd6;font-family:Galmuri11,monospace;text-align:center;padding:0 16px}
+  canvas{width:144px;height:auto;image-rendering:pixelated}
+  h1{margin:0;font-size:34px;letter-spacing:.02em}
+  p{margin:0;font-size:13px;color:#b9c6dc;word-break:keep-all;max-width:22em;line-height:1.6}
+</style>
+</head>
+<body>
+  <canvas id="b" width="18" height="20"></canvas>
+  <h1>bunnytori</h1>
+  <p>작은 것들을 하나씩 모아 두는 곳 · 준비 중</p>
+<script>
+  // 도토리를 안은 픽셀 토끼
+  const P={w:'#fbf7f0',p:'#f4a7b9',k:'#2a1916',c:'#f7b6c2',n:'#e88aa0',a:'#7a4a2a',b:'#c98a4a',B:'#a8693a',l:'#ffffff'};
+  const rows=[
+    "...ww......ww.....",
+    "..wppw....wppw....",
+    "..wppw....wppw....",
+    "..wppw....wppw....",
+    "..wwww....wwww....",
+    ".wwwwwwwwwwwwww...",
+    "wwwwwwwwwwwwwwww..",
+    "wwwkwwwwwwwwkwww..",
+    "wwwwwwwnnwwwwwww..",
+    "wwcwwwwwwwwwwcww..",
+    ".wwwwwwwwwwwwww...",
+    ".wwwwaaaaaawwww...",
+    "wwwwaaaaaaaawwww..",
+    "wwwwwbbbbbbwwwww..",
+    "wwwwwblbbbBwwwww..",
+    ".wwwwbbbbbBwwww...",
+    "..wwwwbbBBwwww....",
+    "...www.BB.www.....",
+  ];
+  const c=document.getElementById('b').getContext('2d'),G={};
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(P[ch]){c.fillStyle=P[ch];c.fillRect(x+1,y+1,1,1);G[(x+1)+','+(y+1)]=1}}));
+  c.fillStyle='#3a2a2a';
+  for(let y=0;y<20;y++)for(let x=0;x<18;x++){if(G[x+','+y])continue;if(G[(x+1)+','+y]||G[(x-1)+','+y]||G[x+','+(y+1)]||G[x+','+(y-1)])c.fillRect(x,y,1,1)}
+</script>
+</body>
+</html>

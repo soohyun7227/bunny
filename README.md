@@ -1,6 +1,8 @@
-# bunny room
+# bunnytori.com
 
-제로와 콜라가 사는 픽셀 작업방. bunnytori.com 홈페이지용 페이지입니다.
+- `home/index.html` : 홈페이지 (토끼 "준비 중" 화면). 도메인 연결 때 맨 앞으로 옮길 예정
+- `bunny_room/index.html` : 제로와 콜라의 픽셀 작업방
+- `index.html` : 도메인 연결 전까지 잠시 작업방을 띄워 두는 자리
+- `doubleu/` : 모임 초대장 게임 (업로드 예정)
 
-- `index.html` : 방 페이지 (파일 하나에 그림과 코드가 모두 들어 있음)
-- GitHub Pages로 자동 배포됩니다.
+GitHub Pages로 자동 배포됩니다.
