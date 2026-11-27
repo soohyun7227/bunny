@@ -573,13 +573,13 @@ const PLAN={
 function travel(a,dest){
   if(a.scene===dest)return;
   if(a.scene==='walk'){a.from='walk';a.dest=dest;a.path=[];arrive(a);return;}
-  a.follow=null;a.actKey=null;a.free=false;a.bubble=dest==='lounge'?'휴게실로 이동 중':'작업방으로 돌아가는 중';
+  a.follow=null;a.actKey=null;a.free=false;a.bubble=({lounge:'휴게실로 가는 중',bed:'침실로 가는 중',walk:'산책 나가는 중',court:'코트로 출근 중',string:'작업방으로 가는 중'})[dest]||'작업방으로 돌아가는 중';
   const d=doorOf(a.scene,dest),ex=approach(a,a.zone);a.from=a.scene;a.path=(ex?[ex]:[]).concat([{x:d.x,y:d.y}]);a.target='__door';a.dest=dest;a.until=Infinity;
 }
 function arrive(a){
   if(a.dest==='walk'){const w=WALKPOS[a.id];Object.assign(a,{scene:'walk',x:w.x,y:w.y,path:[],target:null,follow:null,actKey:'walk',until:Infinity,zone:'mid',bubble:a.id==='me'?'제로 콜라랑 산책 중':'산책 신나'});
     if(a.id==='me'&&!viewManual)setView('walk',false);renderCast();return;}
-  const from=a.from||a.scene;a.scene=a.dest;const d=doorOf(a.scene,from);a.x=d.x;a.y=d.y;if(typeof MANUAL!=='undefined'&&manualOn()&&a===ctrlActor())a.bubble='';a.zone='mid';a.target=null;a.until=0;
+  const from=a.from||a.scene;a.scene=a.dest;const d=doorOf(a.scene,from);a.x=d.x;a.y=d.y;if(typeof MANUAL!=='undefined'&&manualOn()&&a===ctrlActor()){a.bubble='';setView(a.scene,false);}a.zone='mid';a.target=null;a.until=0;
   if(a.id==='me'&&!viewManual)setView(a.scene,false);
 }
 function setView(v,manual){
@@ -911,7 +911,10 @@ function ctrlActor(){return IS_OWNER===true?(ROLE==='oppa'?byId.oppa:byId.me):nu
 function manualOn(){return!!MANUAL&&performance.now()/1000<MANUAL.until;}
 function takeControl(){MANUAL=Object.assign(MANUAL||{},{until:performance.now()/1000+MANUAL_SEC});
   if(!takeControl.told){takeControl.told=true;toast('지금은 직접 움직여요 · 5분 동안 그대로 두면 다시 일과대로 움직여요');}}
-function ownerDoor(to){const c=ctrlActor();if(!c)return false;takeControl();MANUAL.scene=to;setView(to,true);return true;}
+function ownerDoor(to){const c=ctrlActor();if(!c)return false;takeControl();MANUAL.scene=to;
+  if(c.scene===to||c.scene!==VIEW)setView(to,true);   // otherwise watch them walk to the door; the view follows when they go through
+  else{c.bubble=to==='lounge'?'휴게실로 가는 중':to==='bed'?'침실로 가는 중':'작업방으로 가는 중';}
+  return true;}
 function ownerFloor(x,y){const c=ctrlActor();if(!c)return false;takeControl();MANUAL.scene=VIEW;
   if(c.scene!==VIEW)return true;   // walks in through the door first
   const t=performance.now()/1000;goPoint(c,x,y);c.free=true;c.bubble='';c.until=Infinity;c.actKey=null;
@@ -1825,7 +1828,7 @@ function step(now){
       a.pose=a.kind==='dog'?'walk':'stand';a.flip=true;return;}
     if(a.target==='__door'&&!a.path.length){arrive(a);}
     if(t>a.until&&!a.path.length&&!(manualOn()&&a===ctrlActor()))nextAct(a,t);
-    const speed=a.kind==='dog'?40:30;
+    const speed=a.kind==='dog'?40:(manualOn()&&a===ctrlActor()?48:30);
     if(a.follow){
       const o=byId[a.follow],off=a.id==='latte'?{x:-16,y:6}:{x:16,y:8};
       if(o.scene!==a.scene){a.follow=null;a.until=0;return;}
