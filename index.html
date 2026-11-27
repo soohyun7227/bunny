@@ -146,6 +146,21 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
 .cp-del{font:inherit;font-size:12px;border:0;background:none;color:#8b8a7a;cursor:pointer;padding:6px}
 .linkbtn{font:inherit;font-size:12px;border:0;background:none;color:var(--deep);text-decoration:underline;cursor:pointer;padding:0}
 .role-acts{display:flex;gap:10px;margin-top:12px}.role-acts .ib{flex:1;padding:12px 0;font-size:15px}
+.welcome{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;overflow:auto;
+  background:radial-gradient(circle at 50% 38%,#3d7a52 0%,#2a5a3c 45%,#1b3a2a 100%);transition:opacity .5s ease;
+  padding:max(24px,env(safe-area-inset-top,0px)) 20px max(24px,env(safe-area-inset-bottom,0px))}
+.welcome.out{opacity:0;pointer-events:none}
+.wl-in{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.wl-title{font-family:var(--f-display);font-weight:400;font-size:34px;color:var(--warm);margin:0;letter-spacing:.02em;text-shadow:0 3px 0 rgba(0,0,0,.25);cursor:default;-webkit-user-select:none;user-select:none}
+.wl-stage{position:relative;width:min(80vw,300px)}
+#wlCanvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.wl-bubble{position:absolute;left:50%;top:4%;transform:translateX(-50%);background:#fffdf3;color:#26301f;font-weight:700;font-size:15px;padding:6px 14px;border-radius:10px;border:3px solid #26301f;white-space:nowrap;animation:wlbob 2.4s ease-in-out infinite}
+.wl-bubble::after{content:"";position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);border:6px solid transparent;border-top-color:#26301f}
+@keyframes wlbob{50%{transform:translate(-50%,-3px)}}
+.wl-sub{margin:0;color:#e6efd9;font-size:14px;min-height:1.5em}
+.wl-form{width:100%;text-align:left}
+.wl-q{margin:0 0 4px;color:#e6efd9;font-size:14px;text-align:center}
+@media (prefers-reduced-motion:reduce){.wl-bubble{animation:none}.welcome{transition:none}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--deep);color:#fff;font-weight:700;padding:10px 16px;border-radius:999px;border:2px solid var(--accent);z-index:30;font-size:13px}
 </style>
 
@@ -208,16 +223,21 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
     <div id="calBody"></div>
   </div>
 </div>
-<div class="scrim" id="joinScrim" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="join-title">
-    <div class="sh-head"><h2 id="join-title">놀러 오셨군요!</h2></div>
-    <form class="add" id="joinForm">
-      <label for="j-nick">방에서 쓸 이름<input id="j-nick" required maxlength="10" placeholder="예: 민지"></label>
+<div class="welcome" id="welcome">
+  <div class="wl-in">
+    <h1 class="wl-title" id="join-title">Bunny's Office</h1>
+    <div class="wl-stage"><div class="wl-bubble" id="wlBubble">어서오세요!</div><canvas id="wlCanvas" width="160" height="100" aria-label="나와 제로, 콜라가 반겨 주는 그림"></canvas></div>
+    <p class="wl-sub" id="wlSub">불 켜는 중…</p>
+    <form class="add wl-form" id="joinForm" hidden>
+      <label for="j-nick">방에서 쓸 이름<input id="j-nick" required maxlength="10" placeholder="예: 민지" autocomplete="nickname"></label>
       <label>옷 색깔<div class="swatches" id="swatches"></div></label>
-      <button class="ib go" type="submit">방에 들어가기</button>
+      <button class="ib go" type="submit">들어가기</button>
     </form>
-    <p class="empty">들어가면 방 주인과 다른 친구들에게 내 캐릭터가 보여요.</p>
-    <form class="add" id="ownerForm" hidden>
+    <div class="wl-form" id="wlRole" hidden>
+      <p class="wl-q">이 기기는 누구 거예요? 처음 한 번만 골라 주세요</p>
+      <div class="role-acts"><button class="ib go" type="button" data-wrole="me">나</button><button class="ib" type="button" data-wrole="oppa">오빠</button></div>
+    </div>
+    <form class="add wl-form" id="ownerForm" hidden>
       <label for="o-key">방 주인 열쇠<input id="o-key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="열쇠를 붙여 넣으세요"></label>
       <button class="ib" type="submit">주인으로 들어가기</button>
     </form>
@@ -339,6 +359,14 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
   function rememberKey(k){try{localStorage.setItem(KEY_STORE,k);}catch(e){}
     if(window.parent!==window)PARENTS.forEach(o=>{try{window.parent.postMessage({type:'bunny-owner',key:k},o);}catch(e){}});}
   function forgetKey(){try{localStorage.removeItem(KEY_STORE);}catch(e){}}
+  // Safari wipes a framed page's storage between visits, so bunnytori.com keeps the key and role in its own
+  // storage and hands them over in the URL fragment (#k=…&r=…); the fragment never reaches any server
+  const HQ=new URLSearchParams(location.hash.slice(1)),SQ=new URLSearchParams(location.search);
+  const URL_KEY=SQ.get('owner')||HQ.get('k'),URL_ROLE=HQ.get('r');
+  window.bunnyRoleHint=(URL_ROLE==='me'||URL_ROLE==='oppa')?URL_ROLE:null;
+  if(URL_KEY||location.hash){try{history.replaceState(null,'',location.pathname);}catch(e){}}
+  window.bunnyRememberRole=r=>{try{localStorage.setItem('bunny-role',r);}catch(e){}
+    if(window.parent!==window)PARENTS.forEach(o=>{try{window.parent.postMessage({type:'bunny-role',role:r},o);}catch(e){}});};
   function init(){
     if(ready)return ready;
     ready=(async()=>{
@@ -347,8 +375,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       let {data:{session}}=await sb.auth.getSession();
       if(!session){const r=await sb.auth.signInAnonymously();if(r.error){console.warn('[bunny] sign-in',r.error.message);return null;}session=r.data.session;}
       const uid=session.user.id;
-      const q=new URLSearchParams(location.search),urlKey=q.get('owner'),key=urlKey||savedKey();
-      if(urlKey){try{history.replaceState(null,'',location.pathname);}catch(e){}}
+      const urlKey=URL_KEY,key=urlKey||savedKey();
       let owner=false;try{const r=await sb.rpc('is_owner');owner=!!r.data;}catch(e){}
       if(!owner&&key){try{const c=await sb.rpc('claim_owner',{key});owner=!!(c&&c.data===true);}catch(e){}}
       if(owner&&key)rememberKey(key);else if(!owner&&key&&!urlKey)forgetKey();
@@ -1325,19 +1352,39 @@ SHIRTS.forEach(c=>{const b=document.createElement('button');b.type='button';b.cl
 $('joinForm').addEventListener('submit',e=>{
   e.preventDefault();const nick=$('j-nick').value.trim().slice(0,10);if(!nick)return;
   try{localStorage.setItem('visit',JSON.stringify({nick,color:shirt}));}catch{}
-  $('joinScrim').hidden=true;
+  wlEnter();
   selfG={nick,color:shirt,x:80,y:186,tx:84,ty:156,frame:0,ft:0,flip:false,say:'',sayUntil:0,scene:VIEW};makeTag(selfG);selfG.el.querySelector('.name').textContent=nick+' (나)';
   joined=true;emotesEl.hidden=false;chatEl.hidden=false;chatLine('',nick+' 님이 방에 들어왔어요',true);
   roomNS.presence({nick,color:shirt,x:84,y:156,scene:VIEW}).catch(()=>{});
   const me=byId.me;me.pop=2.6;me.popText='어서 와!';
 });
+/* welcome screen: 나 and the dogs say hello; visitors give a name, 나·오빠 go straight in */
+const WL=$('welcome'),wlCtx=$('wlCanvas').getContext('2d');
+function wlEnter(){if(WL.classList.contains('out'))return;WL.classList.add('out');setTimeout(()=>{WL.hidden=true;},520);}
+function wlDraw(t){const keep=ctx;ctx=wlCtx;try{ctx.setTransform(S,0,0,S,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,80,50);
+  E(40,46,32,3,'rgba(0,0,0,.18)');
+  const hop=(k,ph)=>Math.sin(t*k+ph)>.82?-1:0;
+  sprite2('person',byId.me.look,'stand',0,false,32,46-26+hop(1.3,0));
+  sprite2('dog',byId.latte.look,'sit',0,false,11,46-17+hop(2.1,1));
+  sprite2('dog',byId.choco.look,'sit',0,true,53,46-17+hop(1.8,2.4));
+  if(Math.floor(t*1.6)%7===0){F(24,18-((t*8)%6),1.5,1.5,'#f08a9a');F(56,16-((t*8+3)%6),1.5,1.5,'#f08a9a');}
+}finally{ctx=keep;}}
+(function wlLoop(now){if(WL.hidden)return;wlDraw(now/1000);requestAnimationFrame(wlLoop);})(performance.now());
+function wlOwner(){
+  const r=ROLE;$('wlBubble').textContent=r==='oppa'?'오빠 왔다! 멍멍!':'다녀왔어? 멍멍!';
+  if(!r){$('wlRole').hidden=false;$('wlSub').textContent='';return;}
+  $('wlSub').textContent=r==='oppa'?'오빠, 어서 와요':'어서 와요';setTimeout(wlEnter,1500);
+}
+document.querySelectorAll('#wlRole [data-wrole]').forEach(b=>b.onclick=()=>{setRole(b.dataset.wrole);$('wlRole').hidden=true;wlOwner();});
+WL.addEventListener('click',e=>{if(IS_OWNER===true&&ROLE&&e.target===WL)wlEnter();});
 (async()=>{
   roomNS=await use('room');
   const owner=await ownerP;
-  if(!roomNS)return;
+  if(owner)wlOwner();
+  if(!roomNS){if(!owner){$('wlSub').textContent='구경하러 들어가요';setTimeout(wlEnter,1200);}return;}
   roomNS.onPeers(ch=>{onPeerList(ch.peers);onPeerExtras(ch.peers);},()=>{});
   if(owner){joined=true;emotesEl.hidden=false;chatEl.hidden=false;chatLine('','친구가 들어오면 여기서 같이 이야기할 수 있어요',true);roomNS.presence({host:true}).catch(()=>{});}
-  else{$('joinScrim').hidden=false;$('j-nick').focus();}
+  else{$('wlSub').textContent='방에서 쓸 이름을 알려 주세요';$('joinForm').hidden=false;}
 })();
 
 /* website only: the owner can unlock this device with the owner key */
@@ -1350,7 +1397,7 @@ if(window.bunnyClaimOwner){
     const raw=$('o-key').value.replace(/[^A-Za-z0-9_-]/g,'');if(!raw)return;
     const tries=[raw,raw[0].toLowerCase()+raw.slice(1),raw[0].toUpperCase()+raw.slice(1)];
     let res='bad';for(const k of tries){res=await window.bunnyClaimOwner(k).catch(()=>'offline');if(res===true||res==='offline')break;}
-    if(res===true){toast('방 주인으로 확인됐어요');setTimeout(()=>location.reload(),700);}
+    if(res===true){toast('방 주인으로 확인됐어요');if(!ROLE){$('ownerForm').hidden=true;$('joinForm').hidden=true;$('wlRole').hidden=false;document.querySelectorAll('#wlRole [data-wrole]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>location.reload(),300)));}else setTimeout(()=>location.reload(),700);}
     else if(res==='offline')toast('서버에 연결하지 못했어요. 잠시 후 다시 해 주세요');
     else toast('열쇠가 맞지 않아요. 복사해서 그대로 붙여 넣어 주세요');});
 }
@@ -1448,15 +1495,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){shotScrim.hidden=tr
 /* ---------- 우리 둘: schedule board, fridge notes and status lines — only the two owners can read or write ---------- */
 const WHO={me:{name:'나',color:'#c0574a'},oppa:{name:'오빠',color:'#2a3a5a'},both:{name:'같이',color:'#8f9d3e'}};
 let ROLE=null;try{ROLE=localStorage.getItem('bunny-role');}catch{}
+if(!ROLE&&window.bunnyRoleHint)ROLE=window.bunnyRoleHint;
 if(!WHO[ROLE]||ROLE==='both')ROLE=null;
 const COUPLE={ev:[],note:[]},STATUS={};let cpDB=null,cpTab='ev';
 const cpScrim=$('coupleScrim');
-function setRole(r){ROLE=r;try{localStorage.setItem('bunny-role',r);}catch{}$('roleScrim').hidden=true;$('cp-role').textContent=WHO[r].name;renderCouple();}
+function setRole(r){ROLE=r;try{localStorage.setItem('bunny-role',r);}catch{}if(window.bunnyRememberRole)window.bunnyRememberRole(r);$('roleScrim').hidden=true;$('cp-role').textContent=WHO[r].name;renderCouple();}
 document.querySelectorAll('#roleScrim [data-role]').forEach(b=>b.onclick=()=>setRole(b.dataset.role));
 $('cp-role-change').onclick=()=>{$('roleScrim').hidden=false;};
 ownerP.then(async own=>{
   if(!own)return;$('coupleBtn').hidden=false;
-  if(ROLE)$('cp-role').textContent=WHO[ROLE].name;else $('roleScrim').hidden=false;
+  if(ROLE)$('cp-role').textContent=WHO[ROLE].name;
   cpDB=await use('db');if(!cpDB)return;
   cpDB.collection('couple').onSnapshot(sn=>{const ev=[],note=[];Object.keys(STATUS).forEach(k=>delete STATUS[k]);
     sn.docs.forEach(d=>{const v=d.data()||{},id=d.id;
