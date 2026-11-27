@@ -69,6 +69,18 @@ canvas#home{display:block;width:100%;height:auto;aspect-ratio:160/200;image-rend
 .ib.go{background:var(--accent);border-color:#b48a12;color:#2a1d05}
 .ib:disabled{opacity:.5;cursor:default}
 .ib:focus-visible,.chk:focus-visible{outline:2px solid #b48a12;outline-offset:2px}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px}
+.mhead b{font-family:var(--f-display);font-weight:400;font-size:19px;color:var(--deep)}
+.mnav{width:38px;height:34px;border:2px solid var(--deep);border-radius:8px;background:#fff;color:var(--deep);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mwd{font-size:11px;text-align:center;color:#8b8a7a;font-weight:700;padding-bottom:2px}.mwd.sun{color:#c0574a}.mwd.sat{color:#5b8fd9}
+.mday{aspect-ratio:1/1;border:0;border-radius:10px;background:#fff;font:inherit;font-size:14px;color:#26301f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px #ece5cf;min-width:0}
+.mday.sun{color:#c0574a}.mday.sat{color:#5b8fd9}.mday.out{opacity:.35}
+.mday.today{box-shadow:inset 0 0 0 2px var(--olive);font-weight:700}
+.mday.sel{background:var(--accent);box-shadow:inset 0 0 0 2px #b48a12;color:#2a1d05;font-weight:700}
+.mday:focus-visible{outline:2px solid #b48a12;outline-offset:2px}
+.mday .dots{display:flex;gap:2px;height:6px}.mday .dots i{width:6px;height:6px;border-radius:50%}
+.selday{font-family:var(--f-display);font-size:15px;color:var(--olive);margin:14px 0 6px}
 .day{font-family:var(--f-display);font-size:15px;color:var(--olive);margin:12px 0 6px}
 .ev{display:grid;grid-template-columns:30px 54px minmax(0,1fr);gap:8px;align-items:center;padding:8px;border:2px solid #e3dcc5;border-radius:8px;background:#fff;margin-bottom:6px}
 .ev.done{background:#f1eedf}
@@ -220,6 +232,7 @@ form.add textarea{font:inherit;font-size:16px;padding:8px;border:2px solid #b9c2
       <label for="f-cal">캘린더<select id="f-cal"></select></label>
       <button class="ib go" id="f-save" type="submit">달력에 붙이기</button>
     </form>
+    <div class="tabs" id="calTabs" role="tablist"><button type="button" role="tab" data-ctab="month">월</button><button type="button" role="tab" data-ctab="list">리스트</button></div>
     <div id="calBody"></div>
   </div>
 </div>
@@ -950,6 +963,9 @@ const CALS=[{id:null,name:'내 일정',color:'#c9a21f'}];
 const use=n=>{try{return window.claude?window.claude.use(n):Promise.resolve(null);}catch{return Promise.resolve(null);}};
 const mcpP=use('mcp');
 const cal={state:'idle',events:[],err:null,loaded:false};
+let calTab='month',calMonth=(()=>{const d=new Date();d.setDate(1);d.setHours(0,0,0,0);return d;})(),calSel=null;
+function calRange(){const g=new Date(calMonth);g.setDate(1-g.getDay());const e=new Date(g);e.setDate(e.getDate()+42);
+  const t=new Date();t.setHours(0,0,0,0);const t2=new Date(t);t2.setDate(t2.getDate()+14);return[g<t?g:t,e>t2?e:t2];}
 let checks={},checkStore=null;
 const $=id=>document.getElementById(id);
 const scrim=$('scrim'),calBody=$('calBody'),addForm=$('addForm');
@@ -980,8 +996,8 @@ function norm(e,ci){
   return{key:(ci+'_'+String(e.id||start+e.summary)).replace(/[^A-Za-z0-9_-]/g,'_').slice(0,120),title:e.summary||'(제목 없음)',start,allDay:!s.dateTime,day:start.slice(0,10),ci,end:en.dateTime||en.date||''};
 }
 function payloadOf(r){let p=r&&r.payload;if(typeof p==='string'){try{p=JSON.parse(p);}catch{p=null;}}return p||{};}
-function listArgs(c){const s=new Date();s.setHours(0,0,0,0);const e=new Date(s);e.setDate(e.getDate()+7);
-  const a={startTime:iso(s),endTime:iso(e),orderBy:'startTime',pageSize:50};if(c.id)a.calendarId=c.id;return a;}
+function listArgs(c){const [s,e]=calRange();
+  const a={startTime:iso(s),endTime:iso(e),orderBy:'startTime',pageSize:250};if(c.id)a.calendarId=c.id;return a;}
 async function loadEvents(){
   const mcp=await mcpP;
   if(!mcp){cal.state='nomcp';renderCal();return;}
@@ -1021,19 +1037,45 @@ function renderCal(){
     const sm=document.createElement('p');sm.className='empty';sm.textContent='오류 코드: '+(c||'알 수 없음');calBody.appendChild(sm);return;}
   if(cal.state==='loading'&&!cal.loaded){const p=document.createElement('p');p.className='empty';p.textContent='달력 넘기는 중…';calBody.appendChild(p);return;}
   if(cal.partial){const p=document.createElement('p');p.className='empty';p.textContent='일부 캘린더는 불러오지 못했어요.';calBody.appendChild(p);}
-  if(!cal.events.length){const p=document.createElement('p');p.className='empty';p.textContent='이번 주는 일정이 없어요. 위의 + 추가로 하나 붙여 볼까요?';calBody.appendChild(p);return;}
-  let cur=null;
-  cal.events.forEach(ev=>{
-    if(ev.day!==cur){cur=ev.day;const h=document.createElement('div');h.className='day';h.textContent=dayLabel(ev.day);calBody.appendChild(h);}
-    const done=!!checks[ev.key];
+  document.querySelectorAll('#calTabs [data-ctab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ctab===calTab)));
+  const evRow=ev=>{const done=!!checks[ev.key];
     const row=document.createElement('div');row.className='ev'+(done?' done':'');
     const b=document.createElement('button');b.type='button';b.className='chk';b.setAttribute('aria-pressed',String(done));b.setAttribute('aria-label',(done?'완료 취소: ':'완료: ')+ev.title);
     b.onclick=()=>toggleCheck(ev,!done);
     const tm=document.createElement('span');tm.className='tm';tm.textContent=ev.allDay?'하루 종일':ev.start.slice(11,16);
     const tt=document.createElement('span');tt.className='tt';tt.textContent=ev.title;
     const chip=document.createElement('small');chip.textContent=CALS[ev.ci].name;chip.style.background=CALS[ev.ci].color;tt.appendChild(chip);
-    row.append(b,tm,tt);calBody.appendChild(row);
-  });
+    row.append(b,tm,tt);calBody.appendChild(row);};
+  const today=ymd(new Date());
+  if(calTab==='list'){
+    const up=cal.events.filter(e=>e.day>=today);
+    if(!up.length){const p=document.createElement('p');p.className='empty';p.textContent='다가오는 일정이 없어요. 위의 + 추가로 하나 붙여 볼까요?';calBody.appendChild(p);return;}
+    let cur=null;up.slice(0,60).forEach(ev=>{if(ev.day!==cur){cur=ev.day;const h=document.createElement('div');h.className='day';h.textContent=dayLabel(ev.day);calBody.appendChild(h);}evRow(ev);});
+    return;
+  }
+  // month: dots on days with plans, tap a day to see them below
+  if(!calSel)calSel=today;
+  const byDay={};cal.events.forEach(e=>{(byDay[e.day]=byDay[e.day]||[]).push(e);});
+  const head=document.createElement('div');head.className='mhead';
+  const nav=(t,d,l)=>{const b=document.createElement('button');b.type='button';b.className='mnav';b.textContent=t;b.setAttribute('aria-label',l);b.onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+d,1);loadEvents();};return b;};
+  const tl=document.createElement('b');tl.textContent=`${calMonth.getFullYear()}년 ${calMonth.getMonth()+1}월`;
+  head.append(nav('‹',-1,'이전 달'),tl,nav('›',1,'다음 달'));calBody.appendChild(head);
+  const g=document.createElement('div');g.className='mgrid';
+  '일월화수목금토'.split('').forEach((w,i)=>{const d=document.createElement('div');d.className='mwd'+(i===0?' sun':i===6?' sat':'');d.textContent=w;g.appendChild(d);});
+  const first=new Date(calMonth);first.setDate(1-first.getDay());
+  for(let i=0;i<42;i++){const d=new Date(first);d.setDate(first.getDate()+i);const k=ymd(d),evs=byDay[k]||[];
+    if(i>=35&&d.getMonth()!==calMonth.getMonth())break;
+    const b=document.createElement('button');b.type='button';
+    b.className='mday'+(d.getMonth()!==calMonth.getMonth()?' out':'')+(d.getDay()===0?' sun':d.getDay()===6?' sat':'')+(k===today?' today':'')+(k===calSel?' sel':'');
+    b.setAttribute('aria-label',`${d.getMonth()+1}월 ${d.getDate()}일${evs.length?', 일정 '+evs.length+'개':''}`);b.setAttribute('aria-pressed',String(k===calSel));
+    const n=document.createElement('span');n.textContent=d.getDate();const dots=document.createElement('span');dots.className='dots';
+    evs.slice(0,3).forEach(e=>{const i2=document.createElement('i');i2.style.background=k===calSel?'#2a1d05':(checks[e.key]?'#c8c2b0':CALS[e.ci].color);dots.appendChild(i2);});
+    b.append(n,dots);b.onclick=()=>{calSel=k;if(d.getMonth()!==calMonth.getMonth()){calMonth=new Date(d.getFullYear(),d.getMonth(),1);loadEvents();}else renderCal();};g.appendChild(b);}
+  calBody.appendChild(g);
+  const sh=document.createElement('div');sh.className='selday';sh.textContent=dayLabel(calSel);calBody.appendChild(sh);
+  const list=byDay[calSel]||[];
+  if(!list.length){const p=document.createElement('p');p.className='empty';p.textContent='이날은 일정이 없어요.';calBody.appendChild(p);}
+  list.forEach(evRow);
 }
 async function toggleCheck(ev,v){
   if(!checkStore)return;
@@ -1062,6 +1104,7 @@ $('sh-close').onclick=closeCal;
 scrim.addEventListener('click',e=>{if(e.target===scrim)closeCal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!scrim.hidden)closeCal();});
 $('sh-reload').onclick=loadEvents;
+document.querySelectorAll('#calTabs [data-ctab]').forEach(b=>b.onclick=()=>{calTab=b.dataset.ctab;renderCal();});
 $('sh-add').onclick=()=>{addForm.hidden=!addForm.hidden;if(!addForm.hidden){if(!$('f-date').value)$('f-date').value=ymd(new Date());$('f-title').focus();}};
 addForm.addEventListener('submit',async e=>{
   e.preventDefault();
